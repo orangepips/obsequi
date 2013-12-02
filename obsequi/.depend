@@ -1,0 +1,19 @@
+obsequi.o: cppflags obsequi.c utils.h cppflags.h interface.h
+utils.o: cppflags utils.c utils.h
+negamax.o: cppflags negamax.c globals.h utils.h interface.h structs.h consts.h \
+  macros.h
+position_values.o: cppflags position_values.c globals.h utils.h interface.h \
+  structs.h consts.h
+toggle_move.o: cppflags toggle_move.c globals.h utils.h interface.h structs.h \
+  consts.h macros.h
+move_gen.o: cppflags move_gen.c globals.h utils.h interface.h structs.h consts.h \
+  macros.h
+move_sort.o: cppflags move_sort.c globals.h utils.h interface.h structs.h consts.h
+hash.o: cppflags hash.c globals.h utils.h interface.h structs.h consts.h
+display.o: cppflags display.c globals.h utils.h interface.h structs.h consts.h
+traits.o: cppflags traits.c globals.h utils.h interface.h structs.h consts.h \
+  macros.h
+tables.o: cppflags tables.c globals.h utils.h interface.h structs.h consts.h
+init.o: cppflags init.c globals.h utils.h interface.h structs.h consts.h
+does_x_win.o: cppflags does_x_win.c globals.h utils.h interface.h structs.h \
+  consts.h

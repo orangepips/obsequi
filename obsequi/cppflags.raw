@@ -1,0 +1,40 @@
+
+#turn on agressive warnings and optimization
+OPT:-Wall -O2
+
+#turn on profiling.
+#OPT:-pg
+
+#which size of countbits tables do we want to use.
+#OPT:-DCOUNTBITS8
+OPT:-DCOUNTBITS16
+
+#which size of lastbit tables do we want to use.
+#OPT:-DLASTBIT8
+OPT:-DLASTBIT16
+
+#precalculate info to count the number of moves
+OPT:-DCOUNTMOVES_TABLE
+
+#assume the board size is less than 16 rows or columns
+#OPT:-DBOARD_SIZE_LT_16
+
+#number of bits used in the zobrist codes.
+#size of the hashtable will be (1 << HASHCODEBITS). 
+OPT:-DHASHCODEBITS=23
+
+#We can generate the possible moves in one or two stages the
+# point being less sorting costs, therefore two stage is a little faster.
+#Also as an aside it actually helps the move ordering a little
+# meaning fewer nodes need to be searched.
+OPT:-DTWO_STAGE_GENERATION
+
+#We have two different ways to induce symmetry in the move ordering
+#scheme: dynamic or static.
+#OPT:-DDYNAMIC_POSITION_VALUES
+
+#We have proven that there are is no need to play safe moves (unless
+# that is all that is left to play).
+#Therefore set this to force them to be played.
+#OPT:-DPLAY_SAFE_MOVES
+

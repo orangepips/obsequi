@@ -1,0 +1,155 @@
+#!/bin/sh
+
+
+##If any args are given to this script then we get stats for
+## some programs
+
+ECHOFILE=.echo1
+
+function stats () {
+    echo "solve rows $1 cols $2 V" | time ./Obsequi -b >>$ECHOFILE 2>>$ECHOFILE
+}
+
+if [ $# -ne 0 ]
+then
+    rm -f $ECHOFILE
+    ./Obsequi -e >>$ECHOFILE 
+    stats 9 9
+
+    exit 0
+fi
+
+
+##Otherwise we run the check part of the script
+
+function func () {
+
+    echo "solve rows $1 cols $2 V" | ./Obsequi  >.out 2>/dev/null
+
+    if [ $? -ne 0 ]
+    then
+       echo "Crash and Burn $1 $2"
+       exit 1
+    fi
+
+    if [ $3 = "V" ]
+    then
+        grep "^winner V" .out > /dev/null
+    else
+        grep "^winner H" .out > /dev/null
+    fi
+
+    if [ $? -ne 0 ]
+    then
+       echo "Error: $1 $2 $3"
+    fi
+}
+
+function flip () {
+
+    if [ $1 -eq $2 ]
+    then
+        if [ $3 = "1" ]
+        then
+            func $1 $2 V
+        else
+            func $1 $2 H
+        fi
+    else
+        if [ $3 = "V" ]
+        then
+            func $1 $2 V
+            func $2 $1 H
+        elif [ $3 = "H" ]
+        then
+            func $1 $2 H
+            func $2 $1 V
+        elif [ $3 = "1" ]
+        then
+            func $1 $2 V
+            func $2 $1 V
+        elif [ $3 = "2" ]
+        then
+            func $1 $2 H
+            func $2 $1 H
+        else
+            echo "error BDKFHSDKFJH"
+        fi
+    fi
+}
+
+flip 1 1 2
+flip 1 2 H
+flip 1 3 H
+flip 1 4 H
+flip 1 5 H
+flip 1 6 H
+flip 1 7 H
+flip 1 8 H
+
+flip 2 2 1
+flip 2 3 1
+flip 2 4 H
+flip 2 5 V
+flip 2 6 1
+flip 2 7 1
+flip 2 8 H
+flip 2 9 V
+flip 2 10 1
+flip 2 11 1
+flip 2 12 H
+flip 2 13 2
+flip 2 14 1
+flip 2 15 1
+
+echo 2
+
+flip 3 3 1
+flip 3 4 H
+flip 3 5 H
+flip 3 6 H
+flip 3 7 H
+flip 3 8 H
+flip 3 9 H
+flip 3 10 H
+flip 3 11 H
+flip 3 12 H
+flip 3 13 H
+
+echo 3
+
+flip 4 4 1
+flip 4 5 V
+flip 4 6 1
+flip 4 7 V
+flip 4 8 H
+flip 4 9 V
+flip 4 10 H
+flip 4 11 V
+flip 4 12 H
+
+echo 4
+
+flip 5 5 2
+flip 5 6 H
+flip 5 7 H
+flip 5 8 H
+flip 5 9 H
+flip 5 10 H
+
+echo 5
+
+flip 6 6 1
+flip 6 7 V
+flip 6 8 H
+
+echo 6
+
+flip 7 7 1
+flip 7 8 H
+
+# echo 7
+
+# flip 8 8 1
+
+exit 0
