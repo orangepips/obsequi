@@ -153,7 +153,10 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   }
   
   // generate all possible moves for current player given current position.
-  num_moves = move_generator(movelist, whos_turn);
+  num_moves = move_generator(
+      g_board_size[whos_turn & PLAYER_MASK],
+      g_board[whos_turn & PLAYER_MASK],
+      movelist);
 
   // This should never happen.
   if(num_moves == 0) fatal_error(1, "No moves");
@@ -439,14 +442,23 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   num_moves = 1;
 
 #ifdef TWO_STAGE_GENERATION
-  true_count = move_generator_stage1(movelist, whos_turn);
+  true_count = move_generator_stage1(
+      g_board_size[whos_turn & PLAYER_MASK],
+      g_board[whos_turn & PLAYER_MASK],
+      movelist);
   if(true_count == 0){
-    true_count = move_generator_stage2(movelist, 0, whos_turn);
+    true_count = move_generator_stage2(
+        g_board_size[whos_turn & PLAYER_MASK],
+        g_board[whos_turn & PLAYER_MASK],
+        0, movelist);
     stage = 1;
     if(true_count == 0) fatal_error(1, "Should always have a move.\n");
   }
 #else
-  true_count = move_generator(movelist, whos_turn);
+  true_count = move_generator(
+      g_board_size[whos_turn & PLAYER_MASK],
+      g_board[whos_turn & PLAYER_MASK],
+      movelist);
   stage = 1;
   if(true_count == 0)   fatal_error(1, "Should always have a move.\n");
 #endif
@@ -466,7 +478,10 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       if(stage == 0) state = 2;
       else           state = 3;
     } else {
-      num_moves = move_generator_stage2(movelist, num_moves, whos_turn);
+      num_moves = move_generator_stage2(
+          g_board_size[whos_turn & PLAYER_MASK],
+          g_board[whos_turn & PLAYER_MASK],
+          num_moves, movelist);
       state = 3;
     }
     

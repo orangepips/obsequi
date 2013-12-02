@@ -1,5 +1,3 @@
-
-
 #ifndef STRUCTS_H
 #define STRUCTS_H
 
@@ -25,6 +23,20 @@ typedef struct
   s32bit mask_index;
   s32bit info;
 } Move;
+
+typedef struct {
+  // bitboard. 0s are empty, 1s are full.
+  // MORE DETAIL.
+  u32bit board[32];
+
+  s32bit rows;
+  s32bit cols;
+
+  // keep track of simple info such as real and safe moves.
+  Basic_Info info[32];
+  Basic_Info info_totals;
+} Board;
+//extern s32bit       g_empty_squares;
 
 
 //########################################################

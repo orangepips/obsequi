@@ -21,9 +21,3 @@ OPT:-DTWO_STAGE_GENERATION
 #We have two different ways to induce symmetry in the move ordering
 #scheme: dynamic or static.
 #OPT:-DDYNAMIC_POSITION_VALUES
-
-#We have proven that there are is no need to play safe moves (unless
-# that is all that is left to play).
-#Therefore set this to force them to be played.
-#OPT:-DPLAY_SAFE_MOVES
-

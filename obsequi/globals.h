@@ -21,12 +21,10 @@
 // The moves are places in the movelist array.
 // Returns the number of moves that were placed in movelist.
 //========================================================
-s32bit  move_generator        (Move movelist[MAXMOVES], s32bit player);
-
-s32bit  move_generator_stage1 (Move movelist[MAXMOVES], s32bit player);
-
-s32bit  move_generator_stage2 (Move movelist[MAXMOVES],
-                               s32bit start, s32bit player);
+int move_generator(int rows, u32bit board[32], Move movelist[MAXMOVES]);
+int move_generator_stage1(int rows, u32bit board[32], Move movelist[MAXMOVES]);
+int move_generator_stage2(int rows, u32bit board[32],
+                          int start, Move movelist[MAXMOVES]);
 
 // Need to define this in a better place...
 s32bit does_next_player_win(s32bit next_player, s32bit print);

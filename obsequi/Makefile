@@ -1,8 +1,5 @@
 
-##  blah
 CC=gcc
-#CC=/usr/local/gcc/bin/gcc
-
 CFLAGS= 
 CPPFLAGS= `./cppflags`
 

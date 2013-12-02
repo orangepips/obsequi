@@ -1,48 +1,45 @@
-#include "globals.h"
-#include "macros.h"
-
-//#################################################################
 // The following functions are used to generate all the possible
-//   moves which could be made, for a certain player, given
-//   the current board position.
-//#################################################################
+// moves which could be made, for a certain player, given
+// the current board position.
+
+#include "globals.h"
+
+#include "lastbit.h"
+#include "structs.h"
+
+// We have proven that there are is no need to play safe moves.
+// (unless that is all that is left to play).
+#undef PLAY_SAFE_MOVES
 
 //=================================================================
 // This function generates all the moves in one pass.
 //=================================================================
-extern s32bit
-move_generator(Move movelist[MAXMOVES], s32bit player)
-{
-  s32bit i, count = 0, player_index;
-  u32bit prot_rows, curr_row, m, tmp;
+int
+move_generator(int rows, u32bit board[], Move movelist[]) {
+  int count = 0;
 
-  // Will be 0 if horizontal, 1 if vertical.
-  // Appears to be redundant but seems to help the compiler optimize.
-  player_index = player&PLAYER_MASK;
-  
-  for(i = 0; i < g_board_size[player_index]; i++){
-    prot_rows = g_board[player_index][i] & g_board[player_index][i+2];
-    curr_row  = g_board[player_index][i+1];
-    
+  for (int i = 0; i < rows; i++) {
+    u32bit curr_row = board[i+1];
+
 #ifndef PLAY_SAFE_MOVES
     // m contains a 1 at each position where there is valid move.
-    //    (except safe moves, there is no need to play them)
-    m = ~((curr_row|(curr_row>>1)) | (prot_rows&(prot_rows>>1)));
+    // (except safe moves, since there is no need to play them)
+    u32bit prot_rows = board[i] & board[i+2];
+    u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows&(prot_rows>>1)));
 #else
-    // if you uncomment this it will also play safe moves.
-    m = ~(curr_row|(curr_row>>1));
-#endif    
+    u32bit m = ~(curr_row|(curr_row>>1));
+#endif
 
-    while(m){
-      tmp = (m&-m); // least sig bit of m
-      m  ^= tmp;    // remove least sig bit of m.
+    while (m) {
+      u32bit tmp = (m&-m);  // least sig bit of m
+      m ^= tmp;  // remove least sig bit of m.
       movelist[count].mask_index  = lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;
     }
   }
-  
+
   return count;
 }
 
@@ -52,29 +49,20 @@ move_generator(Move movelist[MAXMOVES], s32bit player)
 //   we will not have to evaluate the second half) and in sorting the
 //   moves.
 //=================================================================
-extern s32bit
-move_generator_stage1(Move movelist[MAXMOVES], s32bit player)
-{
-  s32bit i, count = 0;
-  s32bit player_index;
-  
-  u32bit prot_rows, curr_row, m, tmp;
+int
+move_generator_stage1(int rows, u32bit board[], Move movelist[]) {
+  int count = 0;
 
-  // will be 0 if horizontal, 1 if vertical.
-  // This appears to be redundant but it seems to helps the compiler
-  //  optimize.
-  player_index = player&PLAYER_MASK;
-  
-  for(i = 0; i < g_board_size[player_index]; i++){
-    prot_rows = g_board[player_index][i] & g_board[player_index][i+2];
-    curr_row  = g_board[player_index][i+1];
+  for(int i = 0; i < rows; i++){
+    u32bit curr_row = board[i+1];
+    u32bit prot_rows = board[i] & board[i+2];
     
     // m will contain a 1 at each position that there is a move
-    //   which is a vulnerable move with no protected squares.
-    m = ~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1)));
+    // which is a vulnerable move with no protected squares.
+    u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1)));
     
     while(m){
-      tmp = (m&-m); // least sig bit of m
+      u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
       movelist[count].mask_index  = lastbit32(tmp);
       movelist[count].array_index = i+1;
@@ -86,34 +74,28 @@ move_generator_stage1(Move movelist[MAXMOVES], s32bit player)
   return count;
 }
 
-extern s32bit
-move_generator_stage2(Move movelist[MAXMOVES], s32bit count, s32bit player)
-{
-  s32bit i, player_index;
-  u32bit prot_rows, curr_row, m, tmp;
+int
+move_generator_stage2(int rows, u32bit board[],
+                      int start, Move movelist[]) {
+  int count = start;
 
-  // will be 0 if horizontal, 1 if vertical.
-  // This appears to be redundant but it seems to helps the compiler
-  //  optimize.
-  player_index = player&PLAYER_MASK;
-  
-  for(i = 0; i < g_board_size[player_index]; i++){
-    prot_rows = g_board[player_index][i] & g_board[player_index][i+2];
-    curr_row  = g_board[player_index][i+1];
+  for(int i = 0; i < rows; i++){
+    u32bit curr_row = board[i+1];
+    u32bit prot_rows = board[i] & board[i+2];
     
 #ifndef PLAY_SAFE_MOVES
     // m will contain a 1 at each position that there is a move
     //   which is a vulnerable move with a protected squares.
-    m = ~((curr_row|(curr_row>>1)) | (~(prot_rows^(prot_rows>>1))) );
+    u32bit m = ~((curr_row|(curr_row>>1)) | (~(prot_rows^(prot_rows>>1))) );
 #else
     // m will contain a 1 at each position that there is a move
     //   which is a vulnerable move with a protected squares.
-    m = ((~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1))))
+    u32bit m = ((~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1))))
          ^ (~(curr_row|(curr_row>>1))));
 #endif
     
     while(m){
-      tmp = (m&-m); // least sig bit of m
+      u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
       movelist[count].mask_index  = lastbit32(tmp);
       movelist[count].array_index = i+1;
