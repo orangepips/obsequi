@@ -334,14 +334,14 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
   // if no depth remaining stop search.
   if( depth_remaining <= 0 ){
-    s32bit a = 0, b = 0;
-
-    if( (a = does_next_player_win(whos_turn, 0)) > 0 ) {
+    s32bit a = does_next_player_win(whos_turn, 0);
+    if (a > 0) {
       // current player wins.
       return 5000;
     }
 
-    if( (b = does_who_just_moved_win(opponent, 0)) >= 0 ) {
+    s32bit b = does_who_just_moved_win(opponent, 0);
+    if(b >= 0) {
       // opponent wins.
       return -5000;
     }

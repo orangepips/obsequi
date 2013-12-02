@@ -1,7 +1,7 @@
 
 ##  blah
 CC=gcc
-CC=/usr/local/gcc/bin/gcc
+#CC=/usr/local/gcc/bin/gcc
 
 CFLAGS= 
 CPPFLAGS= `./cppflags`
@@ -17,7 +17,7 @@ OBJS= obsequi.o utils.o \
       negamax.o position_values.o \
       toggle_move.o move_gen.o move_sort.o hash.o \
       display.o traits.o \
-      tables.o init.o \
+      tables.o init.o lastbit.o countmoves.o \
       does_x_win.o
 
 

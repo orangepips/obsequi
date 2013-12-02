@@ -178,47 +178,4 @@ extern s32bit       g_move_number[128];
 //========================================================
 extern KeyInfo      g_keyinfo[2][32][32];
 
-
-//========================================================
-// Declare the table we use in countmoves.
-//========================================================
-#ifdef COUNTMOVES_TABLE
-extern s32bit move_table16[65536];
-#endif
-
-
-//========================================================
-// Declare the table we use in countbits32.
-//========================================================
-#if defined COUNTBITS16
-extern s32bit countbits16[65536];
-
-#if defined COUNTBITS8
-#error "Both COUNTBITS8 and COUNTBITS16 are defined."
-#endif
-
-#elif defined COUNTBITS8
-extern s32bit countbits8[256];
-#else
-#error "Neither COUNTBITS8 or COUNTBITS16 are defined."
-#endif
-
-
-//========================================================
-// Declare the table we use in lastbit32.
-//========================================================
-#if defined LASTBIT16
-extern s32bit lastbit16[65536];
-
-#if defined LASTBIT8
-#error "Both LASTBIT8 and LASTBIT16 are defined."
-#endif
-
-#elif defined LASTBIT8
-extern s32bit lastbit8[256];
-#else
-#error "Neither LASTBIT8 and LASTBIT16 are defined."
-#endif
-
-
 #endif //ifndef GLOBALS_H

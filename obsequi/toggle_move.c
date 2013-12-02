@@ -16,7 +16,7 @@ count_safe(s32bit player, s32bit row)
   u32bit mask= ( (~(g_board[player][row] | (g_board[player][row] << 1)))
                  & (guard & (guard << 1)) );
 
-  return COUNTMOVES(mask);
+  return countmoves32(mask);
 }
 
 //########################################################
@@ -30,7 +30,7 @@ count_real(s32bit player, s32bit row)
   // mask contains a bit for each real move.
   u32bit mask= ~(g_board[player][row] | (g_board[player][row] << 1));
 
-  return COUNTMOVES(mask);
+  return countmoves32(mask);
 }
 
 

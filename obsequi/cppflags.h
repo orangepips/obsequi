@@ -2,9 +2,6 @@
 
 char option_string[] = 
 "-Wall -O2\n"
-"-DCOUNTBITS16\n"
-"-DLASTBIT16\n"
-"-DCOUNTMOVES_TABLE\n"
 "-DHASHCODEBITS=23\n"
 "-DTWO_STAGE_GENERATION\n"
 ;

@@ -25,10 +25,6 @@
 #define UPPER   2
 
 
-// blah
-#define ERASE_NEXT_BIT  0x80000000;
-#define NEXT_BIT        0x00010000;
-
 //########################################################
 // Constants used in conjuction with the transposition table
 //   and the zobrist values.

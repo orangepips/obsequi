@@ -5,17 +5,6 @@ OPT:-Wall -O2
 #turn on profiling.
 #OPT:-pg
 
-#which size of countbits tables do we want to use.
-#OPT:-DCOUNTBITS8
-OPT:-DCOUNTBITS16
-
-#which size of lastbit tables do we want to use.
-#OPT:-DLASTBIT8
-OPT:-DLASTBIT16
-
-#precalculate info to count the number of moves
-OPT:-DCOUNTMOVES_TABLE
-
 #assume the board size is less than 16 rows or columns
 #OPT:-DBOARD_SIZE_LT_16
 
