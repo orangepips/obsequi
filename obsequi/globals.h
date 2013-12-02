@@ -28,6 +28,10 @@ s32bit  move_generator_stage1 (Move movelist[MAXMOVES], s32bit player);
 s32bit  move_generator_stage2 (Move movelist[MAXMOVES],
                                s32bit start, s32bit player);
 
+// Need to define this in a better place...
+s32bit does_next_player_win(s32bit next_player, s32bit print);
+s32bit does_who_just_moved_win(s32bit who_just_moved, s32bit print);
+
 //=================================================================
 // Move ordering uses a simple evaluation function as well as
 //   a value associated with each position.

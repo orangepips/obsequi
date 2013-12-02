@@ -46,8 +46,8 @@ _fatal_error_aux(const char *file, const s32bit line, const s32bit err_num,
   }
   
   // start writing the real message.
-  fprintf(stderr, msg_type);
-  fprintf(err_file, msg_type);
+  fprintf(stderr, "%s", msg_type);
+  fprintf(err_file, "%s", msg_type);
   
   va_start (ap, format);
   vfprintf (stderr, format, ap);

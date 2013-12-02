@@ -75,7 +75,7 @@ tr_total_empty_squares()
 }
 
 static s32bit
-tr_border_length_col(player)
+tr_border_length_col(int player)
 {
   u32bit mask;
   s32bit num_rows = g_board_size[player];
@@ -91,7 +91,7 @@ tr_border_length_col(player)
 }
 
 static s32bit
-tr_border_length_row(player)
+tr_border_length_row(int player)
 {
   u32bit mask;
   s32bit num_rows = g_board_size[player];

@@ -2,7 +2,6 @@
 
 #include "globals.h"
 
-
 //########################################################
 // Sanity check functions.
 // These functions try to do a quick check of some set of
@@ -317,17 +316,18 @@ print_current_state()
 extern const char*
 current_search_state()
 {
-  static char*  str = NULL;
+  static char* str = NULL;
 
   g_print = 1;
       
   if(str != NULL) free(str);
-  
-  asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d.",
-           u64bit_to_string(g_num_nodes),
-           g_move_number[1], g_move_number[2], g_move_number[3],
-           g_move_number[4], g_move_number[5], g_move_number[6],
-           g_move_number[7], g_move_number[8], g_move_number[9]);
+ 
+  int x = asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d.",
+                   u64bit_to_string(g_num_nodes),
+                   g_move_number[1], g_move_number[2], g_move_number[3],
+                   g_move_number[4], g_move_number[5], g_move_number[6],
+                   g_move_number[7], g_move_number[8], g_move_number[9]);
+  if (x == -1) exit(3);
 
   return str;
 }

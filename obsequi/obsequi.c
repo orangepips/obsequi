@@ -288,7 +288,7 @@ get_other_commands()
   // get next line of input, exit at end of input.
   while (getline(&line, &line_size, stdin) > 0){
 
-    printf(line);
+    printf("%s", line);
     
     // stop the search.
     if(sscanf(line, "stop%c", &c1) == 1){
@@ -331,7 +331,7 @@ decode_switches(int argc, char **argv)
   while ((c = getopt(argc, argv, "wehl:t:v")) != -1){
     switch(c){
     case 'e':
-      printf(option_string);
+      printf("%s", option_string);
       exit(0);
       
     case 'h':
@@ -554,7 +554,7 @@ get_solve_command_from_lock_file()
 
     printf("%s", line);
     
-    if(len <= 18) fatal_error(1, line);
+    if(len <= 18) fatal_error(1, "%s", line);
     
     if(sscanf(line + 18, "(%d,%d)", &num_rows, &num_cols) != 2)
       fatal_error(1, "Invalid row and columns.\n%s\n", line);
@@ -586,11 +586,11 @@ get_solve_command_from_lock_file()
       
       if(player == 'V'){
         if(board[c][r] == 1 ||  board[c+1][r] == 1)
-          fatal_error(1, line);
+          fatal_error(1, "%s", line);
         board[c][r] = board[c+1][r] = 1;
       } else if(player == 'H'){
         if(board[r][c] == 1 || board[r][c+1] == 1)
-          fatal_error(1, line);
+          fatal_error(1, "%s", line);
         board[r][c] = board[r][c+1] = 1;
       } else fatal_error(1, "Invalid player.\n");
     }
