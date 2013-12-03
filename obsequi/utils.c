@@ -23,7 +23,7 @@ _fatal_error_aux(const char *file, const s32bit line, const s32bit err_num,
 {
   va_list ap;
   static FILE* err_file = NULL;
-  char *msg_type = (err_num == 0) ? "WARNING: " : "ERROR: ";
+  const char *msg_type = (err_num == 0) ? "WARNING: " : "ERROR: ";
 
   // only need to open this if not already open.
   if(err_file == NULL)  err_file = fopen(".fatal_error", "w");
@@ -81,7 +81,7 @@ Asprintf(char **str, s32bit *len, s32bit offset, const char *format, ... )
   va_start (ap, format);
 
   // if no space allocated yet, allocate some.
-  if(*len == 0){ *len = 128; *str = malloc(*len); }
+  if(*len == 0){ *len = 128; *str = (char*)malloc(*len); }
   
   while (1) {
     // attempt printing in the allocated space
@@ -91,7 +91,7 @@ Asprintf(char **str, s32bit *len, s32bit offset, const char *format, ... )
     
     // if not enough space allocate some more.
     *len += 128;
-    *str = realloc(*str, *len);
+    *str = (char*)realloc(*str, *len);
   }
   
   va_end (ap);
@@ -111,7 +111,7 @@ asprintf_my(char **str, s32bit offset, const char *format, ... )
   va_start (ap, format);
 
   // if no space allocated yet, allocate some.
-  if(len == 0){ len = 128; *str = malloc(len); }
+  if(len == 0){ len = 128; *str = (char*)malloc(len); }
   
   while (1) {
     // attempt printing in the allocated space
@@ -121,7 +121,7 @@ asprintf_my(char **str, s32bit offset, const char *format, ... )
     
     // if not enough space allocate some more.
     len += 128;
-    *str = realloc(*str, len);
+    *str = (char*)realloc(*str, len);
   }
   
   va_end (ap);

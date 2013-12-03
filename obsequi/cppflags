@@ -3,7 +3,7 @@
 OPT = []
 
 # Get c99 and gnu extensions.
-OPT += ["-std=gnu99 -D_GNU_SOURCE"]
+#OPT += ["-std=gnu99 -D_GNU_SOURCE"]
 
 # Lots of warnings and make them all errors.
 OPT += ["-Wall -Werror"]

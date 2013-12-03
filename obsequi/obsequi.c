@@ -162,11 +162,12 @@ static void
 get_solve_command()
 {
   char*   line      = NULL, *blocks = NULL;
-  size_t  line_size = 0, len;
+  size_t  line_size = 0;
+  int len;
 
   // Board info for the board which we are solving.
-  u32bit num_rows;
-  u32bit num_cols;
+  int num_rows;
+  int num_cols;
   s32bit board[30][30];
   char   c1, c2;
 
@@ -176,8 +177,8 @@ get_solve_command()
     s32bit t;
     
     if(len > 0){
-      if(blocks != NULL) blocks = realloc(blocks, line_size);
-      else               blocks = malloc(line_size);
+      if(blocks != NULL) blocks = (char*)realloc(blocks, line_size);
+      else               blocks = (char*)malloc(line_size);
     } else continue;
     line[len - 1] = 0;
     
@@ -528,7 +529,9 @@ get_solve_command_from_lock_file()
   FILE* file = NULL;
   
   char*   line      = NULL;
-  size_t  line_size = 0, len, line_pos;
+  size_t  line_size = 0;
+  int line_pos;
+  int len;
 
   // Board info for the board which we are solving.
   u32bit num_rows;

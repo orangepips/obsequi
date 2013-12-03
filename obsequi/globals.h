@@ -110,7 +110,7 @@ void    check_hash_code_sanity();
 //   readable format.
 //========================================================
 void    print_board(s32bit player);
-void    print_board_info();
+void    print_board_info(s32bit player);
 void    print_bitboard(s32bit player);
 void    print_hashkey(Hash_Key key);
 void    print_u64bit(u64bit val);
