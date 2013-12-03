@@ -1,15 +1,8 @@
-
 CC=gcc
 CFLAGS= 
 CPPFLAGS= `./cppflags`
 
-# Use following options to improve performance by a couple percent.
-#   first to profile.
-#   second to recompile with the bonus of the profiling info.
-# -fprofile-arcs
-# -fbranch-probabilities
-
-##  target files.
+EXE= Obsequi
 OBJS= obsequi.o utils.o \
       negamax.o position_values.o \
       toggle_move.o move_gen.o move_sort.o hash.o \
@@ -17,28 +10,20 @@ OBJS= obsequi.o utils.o \
       tables.o init.o lastbit.o countmoves.o \
       does_x_win.o
 
-
-EXE= Obsequi
-
-##  target
-$(EXE): cppflags $(OBJS)
+$(EXE): $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) -o $@
 
+%.o : %.c cppflags.h
+	$(CC) $(CPPFLAGS) -MM $< > $*.D
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
-##  phony targets
-.PHONY: hashclean tidy clean depend
+## other stuff
+cppflags.h: cppflags
+	./cppflags header > cppflags.h
 
-hashclean:
-	/bin/rm -f hash_big.o hash_big2.o hash_n1.o hash_n2.o hash.o
-
-tidy:
-	/bin/rm -f $(OBJS) gmon.out
+.PHONY: clean
 
 clean:
-	/bin/rm -f $(OBJS) $(EXE) *.da *.o gmon.out
+	/bin/rm -f $(OBJS) $(EXE) *.da *.o *.D gmon.out cppflags.h
 
-depend:
-	$(CC) $(CPPFLAGS) -MM $(patsubst %.o,%.c,$(OBJS)) > .depend
-
-## include the .depend file
-include .depend
+-include $(OBJS:.o=.D)

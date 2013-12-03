@@ -1,6 +1,7 @@
 *.swp
 *.swo
 *.o
+*.D
 .depend
 Obsequi
 a.out
