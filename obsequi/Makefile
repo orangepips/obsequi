@@ -41,15 +41,7 @@ clean:
 	/bin/rm -f $(OBJS) $(EXE) *.da *.o gmon.out
 
 depend:
-	$(CC) $(CPPFLAGS) -MM $(patsubst %.o,%.c,$(OBJS)) > .depend~
-	sed s/:/": cppflags"/ < .depend~ > .depend
-
-## other stuff
-cppflags.h: cppflags.raw
-	./cppflags.gen cppflags.h
-
-cppflags: cppflags.raw
-	./cppflags.gen cppflags
+	$(CC) $(CPPFLAGS) -MM $(patsubst %.o,%.c,$(OBJS)) > .depend
 
 ## include the .depend file
 include .depend
