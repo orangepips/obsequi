@@ -9,6 +9,10 @@
 // max number of empty squares which should ever exist is 256
 //  therefore we could possible get close to this number of moves.
 #define MAXMOVES 256
+#define MAX_MOVES 256
+
+// ...
+#define MAX_ROWS 32
 
 // Player stuff. (Used for example with g_board to get the current player).
 #define HORIZONTAL    0

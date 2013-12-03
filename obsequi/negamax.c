@@ -1,6 +1,7 @@
 
 #include "globals.h"
 #include "macros.h"
+#include "move-gen.h"
 
 #include <time.h>
 #include <ctype.h>
@@ -159,7 +160,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       movelist);
 
   // This should never happen.
-  if(num_moves == 0) fatal_error(1, "No moves");
+  CHECK(num_moves, "No moves.");
 
   // should possibly sort the whole list instead of just get first.
   forcefirst.array_index = -1;
@@ -470,14 +471,14 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   
   // need to sort moves and generate more moves in certain situations.
   while(state < 3){
-    if(state == 0) {
+    if(state == 0) {  // state 0 - play first move.
       state = 1;
-    } else if(state == 1){
+    } else if(state == 1){  // state 1 - sort the moves and play the rest.
       sort_moves(movelist, 1, true_count);
       num_moves = true_count;
       if(stage == 0) state = 2;
       else           state = 3;
-    } else {
+    } else { // state 2 - generate the second set of moves and play them.
       num_moves = move_generator_stage2(
           g_board_size[whos_turn & PLAYER_MASK],
           g_board[whos_turn & PLAYER_MASK],

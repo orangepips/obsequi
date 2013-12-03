@@ -3,5 +3,6 @@
 *.o
 *.D
 .depend
+cppflags.h
 Obsequi
 a.out

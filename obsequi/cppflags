@@ -8,24 +8,23 @@ OPT += ["-std=gnu99 -D_GNU_SOURCE"]
 # Lots of warnings and make them all errors.
 OPT += ["-Wall -Werror"]
 
+# Turn on profiling.
+# Run Obsequi
+# gprof Obsequi gmon.out | less
+#OPT += ["-pg"]
+
 # Only the best optimization for this machine.
 OPT += ["-O3 -march=native"]
 
-# Size of the hashtable.
+# Number of bits used in the zobrist codes.
+# Size of the hashtable will be (1 << HASHCODEBITS). 
 OPT += ["-DHASHCODEBITS=24"]
 
 # Two stage move generation.
 OPT += ["-DTWO_STAGE_GENERATION"]
 
-#turn on profiling.
-#OPT:-pg
-
 #assume the board size is less than 16 rows or columns
 #OPT:-DBOARD_SIZE_LT_16
-
-#number of bits used in the zobrist codes.
-#size of the hashtable will be (1 << HASHCODEBITS). 
-#OPT:-DHASHCODEBITS=23
 
 #We can generate the possible moves in one or two stages the
 # point being less sorting costs, therefore two stage is a little faster.

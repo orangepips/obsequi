@@ -14,18 +14,6 @@
 // Function prototypes.
 //########################################################
 
-//========================================================
-// Generate a list of moves that 'player'
-//   can make in the given position. (excluding safe moves).
-//
-// The moves are places in the movelist array.
-// Returns the number of moves that were placed in movelist.
-//========================================================
-int move_generator(int rows, u32bit board[32], Move movelist[MAXMOVES]);
-int move_generator_stage1(int rows, u32bit board[32], Move movelist[MAXMOVES]);
-int move_generator_stage2(int rows, u32bit board[32],
-                          int start, Move movelist[MAXMOVES]);
-
 // Need to define this in a better place...
 s32bit does_next_player_win(s32bit next_player, s32bit print);
 s32bit does_who_just_moved_win(s32bit who_just_moved, s32bit print);

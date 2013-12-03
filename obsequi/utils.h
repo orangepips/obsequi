@@ -1,9 +1,6 @@
-
-
 #ifndef OBSEQUI_UTILS_H
 #define OBSEQUI_UTILS_H
 
-//#define _GNU_SOURCE  //Need this so that __USE_GNU is defined
 #include <features.h>
 
 #include <stdlib.h>
@@ -67,6 +64,9 @@ typedef  int32_t    s32bit;
 //   for debugging since they contain both the file name and line number
 //   of where this function was called. (They all return void.)
 //########################################################
+
+#define CHECK(v, msg) \
+    if ((!v)) fatal_error(1, (msg))
 
 //========================================================
 // Besides printing a message this function also causes the
