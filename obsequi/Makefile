@@ -13,7 +13,7 @@ OBJS= obsequi.o utils.o \
 $(EXE): $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) -o $@
 
-%.o : %.c cppflags.h
+%.o : %.cc cppflags.h
 	$(CC) $(CPPFLAGS) -MM $< > $*.D
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
