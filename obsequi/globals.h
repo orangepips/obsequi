@@ -54,11 +54,11 @@ void    sort_moves(Move movelist[MAXMOVES], s32bit start, s32bit num_moves);
 
 
 void
-update_safe(s32bit player, s32bit row);
-
+update_safe(int num_rows, u32bit board[32], s32bit player, s32bit row)
+;
 void
-update_real(s32bit player, s32bit row);
-
+update_real(int num_rows, u32bit board[32], s32bit player, s32bit row)
+;
 
 void init_less_static_tables();
 

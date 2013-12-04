@@ -1,41 +1,32 @@
-
 #include "globals.h"
 #include "macros.h"
 
 static FILE *trait_file = NULL;
 
-
-static s32bit
-tr_total_non_safe_moves(s32bit player)
-{
-  u32bit mask1, mask2;
-  s32bit num_rows = g_board_size[player];
-  s32bit count = 0, i;
+static int
+tr_total_non_safe_moves(int num_rows, u32bit board[MAX_ROWS]) {
+  int count = 0;
   
-  for(i = 0; i < num_rows; i++){
-    mask1 = g_board[player][i] & g_board[player][i+2];
-    mask2 = ~g_board[player][i+1];
+  for(int i = 0; i < num_rows; i++){
+    u32bit mask1 = board[i] & board[i+2];
+    u32bit mask2 = ~board[i+1];
     
     mask1 = (~((mask1 >> 1) & mask1)) & ((mask2 >> 1) & mask2);
 
-    //    printf("%X\n", mask1);
-    
     count += countbits32(mask1);
   }
   
   return count;
 }
 
-static s32bit
-tr_non_safe_moves_a_little_touchy(s32bit player)
-{
-  u32bit mask1, mask2;
-  s32bit num_rows = g_board_size[player];
-  s32bit count = 0, i;
-  
-  for(i = 0; i < num_rows; i++){
-    mask1 = g_board[player][i] | g_board[player][i+2];
-    mask2 = g_board[player][i+1];
+static int
+tr_non_safe_moves_a_little_touchy(
+int num_rows, u32bit board[MAX_ROWS]) {
+  int count = 0;
+
+  for(int i = 0; i < num_rows; i++){
+    u32bit mask1 = board[i] | board[i+2];
+    u32bit mask2 = board[i+1];
     
     mask1 = ( (mask1 << 1) | mask1
               | (mask2 >> 1) | mask2 | (mask2 << 1) | (mask2 << 2) );
@@ -43,12 +34,6 @@ tr_non_safe_moves_a_little_touchy(s32bit player)
     count += countbits32(~mask1);
   }
 
-  if(count == -1){
-    print_board(player);
-    printf("%d %d\n", player, count);
-    exit(1);
-  }
-  
   return count;
 }
 
@@ -58,47 +43,36 @@ tr_non_safe_moves_no_touchy(s32bit player)
   return 1;
 }
 
-static s32bit
-tr_total_empty_squares()
-{
-  u32bit mask;
-  s32bit num_rows = g_board_size[0];
-  s32bit count = 0, i;
+static int
+tr_total_empty_squares(int num_rows, u32bit board[MAX_ROWS]) {
+  int count = 0;
   
-  for(i = 0; i < num_rows; i++){
-    mask = ~(g_board[0][i+1]);
-
+  for(int i = 0; i < num_rows; i++){
+    u32bit mask = ~(board[i+1]);
     count += countbits32(mask);
   }
     
   return count;
 }
 
-static s32bit
-tr_border_length_col(int player)
-{
-  u32bit mask;
-  s32bit num_rows = g_board_size[player];
-  s32bit count = 0, i;
+static int
+tr_border_length_col(int num_rows, u32bit board[MAX_ROWS]) {
+  int count = 0;
   
-  for(i = 0; i <= num_rows; i++){
-    mask = g_board[player][i] ^ g_board[player][i+1];
-
+  for (int i = 0; i <= num_rows; i++){
+    u32bit mask = board[i] ^ board[i+1];
     count += countbits32(mask);
   }
   
   return count;
 }
 
-static s32bit
-tr_border_length_row(int player)
-{
-  u32bit mask;
-  s32bit num_rows = g_board_size[player];
-  s32bit count = 0, i;
+static int
+tr_border_length_row(int num_rows, u32bit board[MAX_ROWS]) {
+  int count = 0;
   
-  for(i = 0; i <= num_rows; i++){
-    mask  = (g_board[player][i+1]>>1) ^ g_board[player][i+1];
+  for (int i = 0; i <= num_rows; i++){
+    u32bit mask  = (board[i+1]>>1) ^ board[i+1];
     mask &= 0x7FFFFFFF;
     
     count += countbits32(mask);
@@ -128,20 +102,26 @@ write_node_info(u64bit num_nodes, s32bit winner)
   // number of non-safe moves.
   //========================================================
   
+  int rows = g_board_size[winner];
+  int cols = g_board_size[winner^PLAYER_MASK];
+
+  u32bit* w_board = g_board[winner];    
+  u32bit* opp_board = g_board[winner^PLAYER_MASK];    
+
   // total number allowing overlapping of other non-safe moves
   //   and of safe moves.
-  num = tr_total_non_safe_moves(winner);
+  num = tr_total_non_safe_moves(rows, w_board);
   fprintf(trait_file, " %2d", num);
 
-  num = tr_total_non_safe_moves(winner^PLAYER_MASK);
+  num = tr_total_non_safe_moves(cols, opp_board);
   fprintf(trait_file, " %2d :", num);
   
   
   // non safe moves that don't touch a border, except diagonally.
-  num = tr_non_safe_moves_a_little_touchy(winner);
+  num = tr_non_safe_moves_a_little_touchy(rows, w_board);
   fprintf(trait_file, " %2d", num);
 
-  num = tr_non_safe_moves_a_little_touchy(winner^PLAYER_MASK);
+  num = tr_non_safe_moves_a_little_touchy(cols, opp_board);
   fprintf(trait_file, " %2d :", num);
 
 
@@ -158,17 +138,16 @@ write_node_info(u64bit num_nodes, s32bit winner)
   //========================================================
 
   // empty squares.
-  num = tr_total_empty_squares();
+  num = tr_total_empty_squares(rows, w_board);
   fprintf(trait_file, " %2d :", num);
 
   // border length.
-  num = tr_border_length_col(winner);
+  num = tr_border_length_col(rows, w_board);
   fprintf(trait_file, " %2d", num);
 
   // border length.
-  num = tr_border_length_row(winner);
+  num = tr_border_length_row(rows, w_board);
   fprintf(trait_file, " %2d", num);
 
   fprintf(trait_file, "\n");
 }
-

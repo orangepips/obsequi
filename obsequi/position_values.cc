@@ -1,5 +1,3 @@
-
-
 #include "globals.h"
 
 //#################################################################
@@ -25,7 +23,6 @@ set_position_value(s32bit player, s32bit row, s32bit col, s32bit value)
 }
 
 
-#ifdef DYNAMIC_POSITION_VALUES
 //#################################################################
 // If we are using dynamic position values then these are the
 //  functions (and variables) which we use to set these values.
@@ -79,7 +76,6 @@ unset_move_value    (Move move, s32bit player)
   set_position_value(player, move.array_index, move.mask_index, 0);
 }
 
-#else
 //#################################################################
 // If we are using dynamic position values then these are the
 //  functions which we use to set these values.
@@ -100,7 +96,7 @@ set_position_values()
       for(k = 0; k < 32; k++)
         g_first_move[i][j][k] = 0;
 
-#if 0
+/*
   // Set values using very simple scheme.
   for(i = 0; i < 2; i++){
     count = 64;
@@ -111,7 +107,8 @@ set_position_values()
       }
     }
   }
-#elif 1
+*/
+
   // Set values using a more complex (seems to be better) scheme.
   for(i = 0; i < 2; i++){
     count = 127;
@@ -157,10 +154,9 @@ set_position_values()
       }
     }
   }
-#endif
 
+/*
   // print the values. (mostly for debugging)
-#if 0
   for(i = 0; i < 2; i++){
     for(j = 0; j < 32; j++){
       for(k = 0; k < 32; k++){
@@ -171,8 +167,5 @@ set_position_values()
     printf("\n");
   }
   exit(0);
-#endif
-  
+*/
 }
-
-#endif

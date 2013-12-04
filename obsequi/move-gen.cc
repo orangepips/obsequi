@@ -3,7 +3,6 @@
 // the current board position.
 
 #include "globals.h"
-
 #include "lastbit.h"
 #include "structs.h"
 

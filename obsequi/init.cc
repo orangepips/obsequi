@@ -28,10 +28,13 @@ init__safe_count(s32bit player)
     
   g_info_totals[player].safe = 0;
 
-  for(i = 0; i < g_board_size[player]; i++){
+  int num_rows = g_board_size[player];
+  u32bit* board = g_board[player];
+
+  for(i = 0; i < num_rows; i++){
     g_info[player][i+1].safe = 0;
     
-    update_safe(player, i+1);
+    update_safe(num_rows, board, player, i+1);
   }
 }
 
@@ -42,10 +45,13 @@ init__real_count(s32bit player)
     
   g_info_totals[player].real = 0;
 
-  for(i = 0; i < g_board_size[player]; i++){
+  int num_rows = g_board_size[player];
+  u32bit* board = g_board[player];
+
+  for(i = 0; i < num_rows; i++){
     g_info[player][i+1].real = 0;
     
-    update_real(player, i+1);
+    update_real(num_rows, board, player, i+1);
   }
 }
 

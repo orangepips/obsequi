@@ -6,7 +6,7 @@ EXE= Obsequi
 OBJS= obsequi.o utils.o \
       negamax.o position_values.o \
       toggle_move.o move-gen.o move_sort.o hash.o \
-      display.o traits.o \
+      display.o \
       tables.o init.o lastbit.o countmoves.o \
       does_x_win.o
 
@@ -24,6 +24,6 @@ cppflags.h: cppflags
 .PHONY: clean
 
 clean:
-	/bin/rm -f $(OBJS) $(EXE) *.da *.o *.D gmon.out cppflags.h
+	/bin/rm -f $(EXE) *.da *.o *.D gmon.out cppflags.h
 
 -include $(OBJS:.o=.D)

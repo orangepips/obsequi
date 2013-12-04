@@ -31,21 +31,21 @@
 //  the board as it can. (no guarantee of optimality).
 //#################################################################
 static inline void
-pack_prot(u32bit tmp_board[32], s32bit player, s32bit *prot)
+pack_prot(int num_rows, u32bit board[32], u32bit tmp_board[32], s32bit *prot)
 {
   s32bit r = 0, p = 0; //row, and number of prot. areas we have placed.
   
   u32bit tmp, inter, walls;
   
-  for(r = 0; r < g_board_size[player]; r++){
+  for(r = 0; r < num_rows; r++){
     // set bit at each position where there is interference.
     inter = (tmp_board[r] | tmp_board[r+1] | tmp_board[r+2] | tmp_board[r+3]
-             | g_board[player][r+1] | g_board[player][r+2]);
+             | board[r+1] | board[r+2]);
     inter = (inter >> 1) | inter; 
     
     // set bit at each position which there is a wall.
-    walls = ( ((g_board[player][r] >> 1) & g_board[player][r])
-              | ((g_board[player][r+3] >> 1) & g_board[player][r+3]) );
+    walls = ( ((board[r] >> 1) & board[r])
+              | ((board[r+3] >> 1) & board[r+3]) );
     
     // combine (bit set at each position which we can place a prot. area).
     inter = walls & ~inter;
@@ -72,7 +72,7 @@ pack_prot(u32bit tmp_board[32], s32bit player, s32bit *prot)
 // It also counts the number of unused squares.
 //#################################################################
 static void
-pack_vuln(u32bit tmp_board[32], s32bit player,
+pack_vuln(int num_rows, u32bit board[32], u32bit tmp_board[32],
           s32bit *vuln2, s32bit *vuln2_w_prot,
           s32bit *vuln1, s32bit *vuln1_w_prot,
           s32bit *unused) //, s32bit print)
@@ -85,13 +85,13 @@ pack_vuln(u32bit tmp_board[32], s32bit player,
   s32bit r, state;
   u32bit s_v = 0; //start of vulnerable
   
-  for(r = 0; r < g_board_size[player]; r++){
+  for(r = 0; r < num_rows; r++){
     next_prev_row  = tmp_board[r];
-    next_prev_row |= ~(g_board[player][r+2] | (g_board[player][r+2] << 1));
-    next_prev_row |= ~(g_board[player][r+2] | (g_board[player][r+2] >> 1));
+    next_prev_row |= ~(board[r+2] | (board[r+2] << 1));
+    next_prev_row |= ~(board[r+2] | (board[r+2] >> 1));
 
-    curr_row = ~(g_board[player][r+1] | tmp_board[r+1]);
-    adj_rows = g_board[player][r] & g_board[player][r+2];
+    curr_row = ~(board[r+1] | tmp_board[r+1]);
+    adj_rows = board[r] & board[r+2];
     state = 0;
     
     //========================================================
@@ -229,7 +229,7 @@ pack_vuln(u32bit tmp_board[32], s32bit player,
 //  onto the board as it can. (no guarantee of optimality).
 //#################################################################
 static inline void
-pack_safe(u32bit tmp_board[32], s32bit player,
+pack_safe(int num_rows, u32bit board[32], u32bit tmp_board[32],
           s32bit *safe_op2, s32bit *safe_op1, s32bit *safe_op0)
 {
   u32bit guard, mask, curr, tmp;
@@ -237,9 +237,9 @@ pack_safe(u32bit tmp_board[32], s32bit player,
   s32bit r;                       //row
   s32bit s2 = 0, s1 = 0, s0 = 0;
   
-  for(r = 0; r < g_board_size[player]; r++){
-    guard = g_board[player][r] & g_board[player][r+2];
-    curr  = g_board[player][r+1] | tmp_board[r+1];
+  for(r = 0; r < num_rows; r++){
+    guard = board[r] & board[r+2];
+    curr  = board[r+1] | tmp_board[r+1];
     
     // mask contains a bit for each safe move.
     mask  = ( (~(curr | (curr >> 1))) & (guard & (guard >> 1)) );
@@ -257,17 +257,17 @@ pack_safe(u32bit tmp_board[32], s32bit player,
         tmp_board[r+1] |= (tmp >> 1);
         
         // check up.
-        if(  (!(g_board[player][r] & (tmp >> 1)))
-             && (g_board[player][r-1] & (tmp >> 1)) ){
+        if(  (!(board[r] & (tmp >> 1)))
+             && (board[r-1] & (tmp >> 1)) ){
           // up is good now check down.
-          if(  (!(g_board[player][r+2] & (tmp >> 1)))
-               && (g_board[player][r+3] & (tmp >> 1)) ){
+          if(  (!(board[r+2] & (tmp >> 1)))
+               && (board[r+3] & (tmp >> 1)) ){
             s2++;
           } else {
             s1++;
           }
-        } else if(  (!(g_board[player][r+2] & (tmp >> 1)))
-                    && (g_board[player][r+3] & (tmp >> 1)) ){
+        } else if(  (!(board[r+2] & (tmp >> 1)))
+                    && (board[r+3] & (tmp >> 1)) ){
           s1++;
         } else {
           s0++;
@@ -279,17 +279,17 @@ pack_safe(u32bit tmp_board[32], s32bit player,
         tmp_board[r+1] |= (tmp << 2);
         
         // check up.
-        if(  (!(g_board[player][r] & (tmp << 2)))
-             && (g_board[player][r-1] & (tmp << 2)) ){
+        if(  (!(board[r] & (tmp << 2)))
+             && (board[r-1] & (tmp << 2)) ){
           // up is good now check down.
-          if(  (!(g_board[player][r+2] & (tmp << 2)))
-               && (g_board[player][r+3] & (tmp << 2)) ){
+          if(  (!(board[r+2] & (tmp << 2)))
+               && (board[r+3] & (tmp << 2)) ){
             s2++;
           } else {
             s1++;
           }
-        } else if(  (!(g_board[player][r+2] & (tmp << 2)))
-                    && (g_board[player][r+3] & (tmp << 2)) ){
+        } else if(  (!(board[r+2] & (tmp << 2)))
+                    && (board[r+3] & (tmp << 2)) ){
           s1++;
         } else {
           s0++;
@@ -335,7 +335,13 @@ does_next_player_win(s32bit next_player)
   s32bit r_value = 0, i;
 
   // temporary board to store which positions have already been packed.
+  int num_rows = g_board_size[next_player];
+  u32bit* board = g_board[next_player];
+
+  // temporary board to store which positions have already been packed.
   u32bit tmp_board[32];
+  memset(tmp_board, 0, sizeof(tmp_board));
+  
 
 #ifdef NOTHING
   return -1;
@@ -352,11 +358,11 @@ does_next_player_win(s32bit next_player)
 #ifdef NO_PROT
   prot = 0;
 #else
-  pack_prot(tmp_board, next_player, &prot);
+  pack_prot(num_rows, board, tmp_board, &prot);
 #endif
 
   // Determine the number of vuln, vuln_w_prot, and unused.
-  pack_vuln(tmp_board, next_player, &vuln2, &vuln2_w_prot,
+  pack_vuln(num_rows, board, tmp_board, &vuln2, &vuln2_w_prot,
             &vuln1, &vuln1_w_prot, &unused); //, print);
 
 #ifdef NO_VULN_W_PROT
@@ -381,7 +387,7 @@ does_next_player_win(s32bit next_player)
 #ifdef NO_SAFE_OPT
   safe_op2 = safe_op1 = safe_op0 = 0;
 #else
-  pack_safe(tmp_board, next_player, &safe_op2, &safe_op1, &safe_op0);
+  pack_safe(num_rows, board, tmp_board, &safe_op2, &safe_op1, &safe_op0);
 #endif
 
 #ifdef PRINT_DOES_X_WIN_INFO
@@ -510,10 +516,14 @@ does_who_just_moved_win(s32bit who_just_moved)
   s32bit safe_op2, safe_op1, safe_op0; //safe moves with options.
 
   // value we return and other variables.
-  s32bit r_value = 0, i;
+  s32bit r_value = 0;
+
+  int num_rows = g_board_size[who_just_moved];
+  u32bit* board = g_board[who_just_moved];
 
   // temporary board to store which positions have already been packed.
   u32bit tmp_board[32];
+  memset(tmp_board, 0, sizeof(tmp_board));
   
 #ifdef NOTHING
   return -1;
@@ -522,7 +532,6 @@ does_who_just_moved_win(s32bit who_just_moved)
   //========================================================  
   // Initialize all of the values.
   //========================================================  
-  for(i = 0; i < 32; i++) tmp_board[i] = 0;
   safe  = g_info_totals[who_just_moved].safe;
   empty = g_empty_squares;
   
@@ -530,11 +539,11 @@ does_who_just_moved_win(s32bit who_just_moved)
 #ifdef NO_PROT
   prot = 0;
 #else
-  pack_prot(tmp_board, who_just_moved, &prot);
+  pack_prot(num_rows, board, tmp_board, &prot);
 #endif
 
   // Determine the number of vuln, vuln_w_prot, and unused.
-  pack_vuln(tmp_board, who_just_moved, &vuln2, &vuln2_w_prot,
+  pack_vuln(num_rows, board, tmp_board, &vuln2, &vuln2_w_prot,
             &vuln1, &vuln1_w_prot, &unused);
 
 #ifdef NO_VULN_W_PROT
@@ -559,7 +568,7 @@ does_who_just_moved_win(s32bit who_just_moved)
 #ifdef NO_SAFE_OPT
   safe_op2 = safe_op1 = safe_op0 = 0;
 #else
-  pack_safe(tmp_board, who_just_moved, &safe_op2, &safe_op1, &safe_op0);
+  pack_safe(num_rows, board, tmp_board, &safe_op2, &safe_op1, &safe_op0);
 #endif
   
   /*
