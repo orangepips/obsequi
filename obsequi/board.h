@@ -7,9 +7,7 @@
 
 #include "structs.h"
 
-//########################################################
 // Basic board info which we keep track of.
-//########################################################
 struct BasicInfo {
   int safe;
   int real;
@@ -31,6 +29,21 @@ class Board {
   void Print() const;
   void PrintInfo() const;
   void PrintBitboard() const;
+
+  bool IsGameOver(int* score) const {
+    if(this->info_totals.safe > opponent_->info_totals.real){
+      // current player wins.
+      *score = 5000;
+      return true;
+    }
+    
+    if(opponent_->info_totals.safe >= this->info_totals.real){
+      // opponent wins.
+      *score = -5000;
+      return true;
+    }
+    return false;
+  }
 
  private:
   void UpdateSafe(int row) {
@@ -61,9 +74,10 @@ class Board {
  public:
   // TODO(nathan): need to migrate these all to private.
   u32bit board[32];
-
   BasicInfo info[32];
   BasicInfo info_totals;
+
+ private:
 };
 
 #endif  // BOARD_H

@@ -126,7 +126,6 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   else { fatal_error(1, "Invalid player.\n"); exit(1); }
 
   Board* curr = g_boardx[whos_turn];
-  Board* opp = curr->GetOpponent();
 
   // initialize the number of empty squares.
   g_empty_squares = 0;
@@ -137,21 +136,11 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   init_stats();
   
   // Can we already determine a winner?
-  {
-    // stop search if game over.
-    if(curr->info_totals.safe > opp->info_totals.real){
-      // current player wins.
-      *col = *row = -1;
-      *nodes = 0;
-      return 5000;
-    }
-    
-    if(opp->info_totals.safe >= curr->info_totals.real){
-      // opponent wins.
-      *col = *row = -1;
-      *nodes = 0;
-      return -5000;
-    }
+  int rv;
+  if (curr->IsGameOver(&rv)) {
+    *col = *row = -1;
+    *nodes = 0;
+    return rv;
   }
   
   // generate all possible moves for current player given current position.
@@ -358,23 +347,13 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   //------------------------------------------
   // Can we determine a winner yet (simple check).
   //------------------------------------------
-
-  // does current player win
-  if(curr->info_totals.safe > opp->info_totals.real){
+  int rv;
+  if (curr->IsGameOver(&rv)) {
 #ifdef COLLECT_STATS
     cut1++;
 #endif
-    return 5000;
+    return rv;
   }
-  
-  // does opponent win
-  if(opp->info_totals.safe >= curr->info_totals.real){
-#ifdef COLLECT_STATS
-    cut2++;
-#endif
-    return -5000;
-  }
-
 
   //------------------------------------------
   // check transposition table
