@@ -1,8 +1,9 @@
 
 #include "globals.h"
-#include "macros.h"
 #include "move-gen.h"
 #include "positional-values.h"
+#include "hash-table.h"
+#include "countbits.h"
 
 #include <time.h>
 #include <ctype.h>
@@ -27,7 +28,7 @@ static void
 print_stats()
 {
   s32bit i, j;
-  
+
   printf("%d %d %d %d.\n\n", cut1, cut2, cut3, cut4);
 
   for(i = 0; i < 40; i++){
@@ -69,11 +70,6 @@ init_stats()
 
 extern s32bit  debug_score_move;
 
-Hash_Key       g_norm_hashkey;
-Hash_Key       g_flipV_hashkey;
-Hash_Key       g_flipH_hashkey;
-Hash_Key       g_flipVH_hashkey;
-
 u64bit         g_num_nodes;
 
 s32bit         g_empty_squares = 0;
@@ -107,7 +103,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   s32bit  d, i, value = 0;
   s32bit  whos_turn;
   Move    forcefirst;
-    
+
   // Set who's turn it is.
   if(toupper(dir) == 'V')      whos_turn = VERTICAL;
   else if(toupper(dir) == 'H') whos_turn = HORIZONTAL;
@@ -118,9 +114,9 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   g_empty_squares = 0;
   for(i = 0; i < curr->GetNumRows(); i++)
     g_empty_squares += countbits32( ~(curr->board[i+1]) );
-  
+
   init_stats();
-  
+
   // Can we already determine a winner?
   int rv;
   if (curr->IsGameOver(&rv)) {
@@ -128,7 +124,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     *nodes = 0;
     return rv;
   }
-  
+
   // generate all possible moves for current player given current position.
   int num_moves;
   Move movelist[MAXMOVES];
@@ -152,42 +148,31 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
     // set what the starting max depth is.
     starting_depth = d;
-        
+
     // iterate through all the possible moves.
     for(i = 0; i < num_moves; i++){
 
-#ifdef DYNAMIC_POSITION_VALUES
-      init_move_value();
-      set_move_value(movelist[i], whos_turn);
-#else
       //set_position_values();
 
       //curr->position->Print();
       //curr->GetOpponent()->position->Print();
-#endif
-      
+
       g_move_number[0] = i;
 #ifdef RECORD_MOVES
       g_move_player[0] = whos_turn;
       g_move_position[0] = movelist[i];
 #endif
-      
+
       g_empty_squares -= 2;
       curr->ToggleMove(movelist[i]);
-      toggle_hash_code
-    (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
+      toggle_hash_code(whos_turn, movelist[i]);
       check_hash_code_sanity();
-      
+
       value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
-      
-#ifdef DYNAMIC_POSITION_VALUES
-      unset_move_value(movelist[i], whos_turn);
-#endif
 
       g_empty_squares += 2;
       curr->ToggleMove(movelist[i]);
-      toggle_hash_code
-    (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
+      toggle_hash_code(whos_turn, movelist[i]);
       check_hash_code_sanity();
 
       printf("Move (%d,%d), value %d: %s.\n",
@@ -217,11 +202,11 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       } else {
         fatal_error(1, "oops.");
       }
-      
+
       *nodes = g_num_nodes;
 
       print_stats();
-      
+
       return value;
     }
 
@@ -243,26 +228,26 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     }
 
     print_stats();
-    
+
     if(num_moves == 0){
       break;
     }
-    
+
     // use a stable sort algorithm
     {
       Move swp;
       s32bit max, index, j;
-      
+
       for(i=0; i<num_moves; i++) {
         max = movelist[i].info;
         index = i;
-        
+
         for(j=i+1; j < num_moves; j++)
           if(movelist[j].info > max){
             max = movelist[j].info;
             index = j;
           }
-    
+
         if(index != i){
           swp = movelist[index];
           //          printf("%d %d\n", index, i);
@@ -273,7 +258,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
         }
       }
     }
-    
+
     printf("The value is %d at a depth of %d.\n", value, d);
     printf("Nodes: %u.\n", (u32bit)g_num_nodes);
   }
@@ -299,12 +284,8 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   Move   forcefirst;
 
   s32bit stage = 0, state = 0, true_count, i = 0, num_moves = 1;
-  
-  Board* curr = g_boardx[whos_turn];
 
-#ifdef DYNAMIC_POSITION_VALUES
-  s32bit dyn_set;
-#endif
+  Board* curr = g_boardx[whos_turn];
 
   // increment a couple of stats
   g_num_nodes++;
@@ -336,13 +317,13 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
     return value;
   // since we aren't using iter deep not interested in forcefirst.
   forcefirst.array_index = -1;
-  
+
 
   //------------------------------------------
   // Can we determine a winner yet (look harder).
   //------------------------------------------
 
-{  
+{
   int rv;
   if (curr->IsGameOverExpensive(&rv)) {
     cut3++;
@@ -379,12 +360,12 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   stage = 1;
   if(true_count == 0)   fatal_error(1, "Should always have a move.\n");
 #endif
-  
+
   // score all the moves and move the best to the front.
   score_and_get_first(curr, movelist, true_count, forcefirst);
-  
+
   best = movelist[0];
-  
+
   // need to sort moves and generate more moves in certain situations.
   while(state < 3){
     if(state == 0) {  // state 0 - play first move.
@@ -398,7 +379,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       num_moves = move_generator_stage2(*curr, num_moves, movelist);
       state = 3;
     }
-    
+
     // Iterate through all the moves.
     for(; i < num_moves; i++){
 
@@ -412,36 +393,27 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       // make move.
       g_empty_squares -= 2;
       curr->ToggleMove(movelist[i]);
-      toggle_hash_code
-    (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
-#ifdef DYNAMIC_POSITION_VALUES
-      dyn_set = set_move_value(movelist[i], whos_turn);
-#endif
-      
+      toggle_hash_code(whos_turn, movelist[i]);
+
       // recurse.
-      value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK,
-                       -beta, -alpha);
-      
+      value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK, -beta, -alpha);
+
       // undo move.
       g_empty_squares += 2;
       curr->ToggleMove(movelist[i]);
-      toggle_hash_code
-    (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
-#ifdef DYNAMIC_POSITION_VALUES
-      if(dyn_set != 0) unset_move_value(movelist[i], whos_turn);
-#endif
+      toggle_hash_code(whos_turn, movelist[i]);
 
       // If this is a cutoff, break.
       if(value >= beta){
         alpha = value;
         best  = movelist[i];
-        
+
         stat_cutoffs[starting_depth - depth_remaining]++;
         if(i < 5) stat_nth_try[starting_depth - depth_remaining][i]++;
         else      stat_nth_try[starting_depth - depth_remaining][5]++;
         break;
       }
-      
+
       // If the current value is greater than alpha, increase alpha.
       if(value > alpha) {
         alpha = value;
@@ -453,10 +425,10 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
     //   of this loop as well.
     if(value >= beta) break;
   }
-  
+
   // save the position in the hashtable
   hashstore(alpha, init_alpha, init_beta, (g_num_nodes - start_nodes) >> 5,
             depth_remaining, best, whos_turn);
-  
+
   return alpha;
 }

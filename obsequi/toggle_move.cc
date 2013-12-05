@@ -1,6 +1,5 @@
 
 #include "globals.h"
-#include "macros.h"
 #include "positional-values.h"
 
 //#define DEBUG_SCORE_MOVE

@@ -5,9 +5,9 @@ CPPFLAGS= `./cppflags`
 EXE= Obsequi
 OBJS= obsequi.o utils.o board.o \
       negamax.o positional-values.o \
-      toggle_move.o move-gen.o move_sort.o hash.o \
+      toggle_move.o move-gen.o move_sort.o hash-table.o \
       display.o \
-      tables.o init.o lastbit.o countmoves.o \
+      init.o lastbit.o countmoves.o \
       score-board.o
 
 $(EXE): $(OBJS)

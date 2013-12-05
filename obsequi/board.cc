@@ -1,6 +1,5 @@
 #include "consts.h"
 #include "board.h"
-#include "macros.h"
 #include "positional-values.h"
 
 Board::Board(int num_rows, int num_cols)

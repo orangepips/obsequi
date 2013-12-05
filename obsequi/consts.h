@@ -1,5 +1,3 @@
-
-
 //########################################################
 // Constants which we use.
 // Any constants which we commonly change or try to tweak
@@ -22,27 +20,3 @@
 // Used with g_board_size (to get num of rows and num of cols).
 #define ROW_INDEX  HORIZONTAL
 #define COL_INDEX  VERTICAL
-
-
-#define LOWER   0
-#define EXACT   1
-#define UPPER   2
-
-
-//########################################################
-// Constants used in conjuction with the transposition table
-//   and the zobrist values.
-//########################################################
-
-// HASHCODEBITS should already be defined.
-#ifndef HASHCODEBITS
-#error "HASHCODEBITS must be defined.\n"
-#endif
-
-// It should have a value of between 0 and 31.
-#if ! (HASHCODEBITS > 0 && HASHCODEBITS < 31)
-#error "Invalid value for HASHCODEBITS, it should be a value from 1 - 30."
-#endif
-
-#define HASHSIZE (1 << HASHCODEBITS)
-#define HASHMASK (HASHSIZE - 1)

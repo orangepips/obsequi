@@ -101,6 +101,11 @@ class Board {
   BasicInfo info_totals;
 
   PositionalValues* position;
+  
+ private:
+  // Disallow copy and assign.
+  Board(const Board&);
+  void operator=(const Board&);
 };
 
 #endif  // BOARD_H
