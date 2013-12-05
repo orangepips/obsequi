@@ -7,6 +7,8 @@
 #include "structs.h"
 #include "score-board.h"
 
+class PositionalValues;
+
 // Basic board info which we keep track of.
 struct BasicInfo {
   int safe;
@@ -98,7 +100,7 @@ class Board {
   BasicInfo info[32];
   BasicInfo info_totals;
 
- private:
+  PositionalValues* position;
 };
 
 #endif  // BOARD_H

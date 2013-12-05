@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "macros.h"
 #include "move-gen.h"
+#include "positional-values.h"
 
 #include <time.h>
 #include <ctype.h>
@@ -75,7 +76,6 @@ Hash_Key       g_flipVH_hashkey;
 
 u64bit         g_num_nodes;
 
-s32bit         g_first_move[2][32][32];
 s32bit         g_empty_squares = 0;
 
 s32bit         g_move_number[128];
@@ -104,8 +104,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta);
 extern s32bit
 search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 {
-  s32bit  d, i, value = 0, num_moves;
-  Move    movelist[MAXMOVES];
+  s32bit  d, i, value = 0;
   s32bit  whos_turn;
   Move    forcefirst;
     
@@ -116,12 +115,10 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
   Board* curr = g_boardx[whos_turn];
 
-  // initialize the number of empty squares.
   g_empty_squares = 0;
   for(i = 0; i < curr->GetNumRows(); i++)
     g_empty_squares += countbits32( ~(curr->board[i+1]) );
   
-  // zero out all the statistics variables.
   init_stats();
   
   // Can we already determine a winner?
@@ -133,14 +130,14 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   }
   
   // generate all possible moves for current player given current position.
+  int num_moves;
+  Move movelist[MAXMOVES];
   num_moves = move_generator(*curr, movelist);
-
-  // This should never happen.
   CHECK(num_moves, "No moves.");
 
   // should possibly sort the whole list instead of just get first.
   forcefirst.array_index = -1;
-  score_and_get_first(curr, movelist, num_moves, whos_turn, forcefirst);
+  score_and_get_first(curr, movelist, num_moves, forcefirst);
   sort_moves(movelist, 1, num_moves);
 
   // Really this is for iterative deepening.
@@ -163,7 +160,10 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       init_move_value();
       set_move_value(movelist[i], whos_turn);
 #else
-      set_position_values();
+      //set_position_values();
+
+      //curr->position->Print();
+      //curr->GetOpponent()->position->Print();
 #endif
       
       g_move_number[0] = i;
@@ -381,7 +381,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 #endif
   
   // score all the moves and move the best to the front.
-  score_and_get_first(curr, movelist, true_count, whos_turn, forcefirst);
+  score_and_get_first(curr, movelist, true_count, forcefirst);
   
   best = movelist[0];
   

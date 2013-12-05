@@ -1,6 +1,7 @@
 #include "consts.h"
 #include "board.h"
 #include "macros.h"
+#include "positional-values.h"
 
 Board::Board(int num_rows, int num_cols)
     : num_rows_(num_rows)
@@ -46,6 +47,7 @@ void Board::Initialize(int num_rows, int num_cols, Board* opponent) {
   }
 
   this->InitInfo();
+  this->position = new PositionalValues(num_rows, num_cols);
 }
 
 void Board::SetBlock(int row, int col) {

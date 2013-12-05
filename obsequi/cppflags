@@ -38,7 +38,7 @@ OPT += ["-DTWO_STAGE_GENERATION"]
 
 #We have two different ways to induce symmetry in the move ordering
 #scheme: dynamic or static.
-#OPT:-DDYNAMIC_POSITION_VALUES
+#OPT += ["-DDYNAMIC_POSITION_VALUES"]
 
 # Use following options to improve performance by a couple percent.
 #   first to profile.

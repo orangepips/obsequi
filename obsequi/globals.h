@@ -12,10 +12,6 @@
 // Function prototypes.
 //########################################################
 
-// Need to define this in a better place...
-//s32bit does_next_player_win(Board* board, s32bit print);
-//s32bit does_who_just_moved_win(Board* board, s32bit print);
-
 //=================================================================
 // Move ordering uses a simple evaluation function as well as
 //   a value associated with each position.
@@ -36,7 +32,7 @@ void    set_position_values ();
 //s32bit  score_move(Move move, s32bit player);
 void
 score_and_get_first(Board* board, Move movelist[MAXMOVES], s32bit num_moves,
-                    s32bit player, Move first);
+                    Move first);
 
 //========================================================
 // Use the value of movelist[i].info to sort the moves in
@@ -136,8 +132,6 @@ extern Hash_Key     g_norm_hashkey;
 extern Hash_Key     g_flipV_hashkey;
 extern Hash_Key     g_flipH_hashkey;
 extern Hash_Key     g_flipVH_hashkey;
-
-extern s32bit       g_first_move[2][32][32];
 
 extern s32bit       g_move_number[128];
 

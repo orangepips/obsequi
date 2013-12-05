@@ -4,7 +4,7 @@ CPPFLAGS= `./cppflags`
 
 EXE= Obsequi
 OBJS= obsequi.o utils.o board.o \
-      negamax.o position_values.o \
+      negamax.o positional-values.o \
       toggle_move.o move-gen.o move_sort.o hash.o \
       display.o \
       tables.o init.o lastbit.o countmoves.o \
@@ -24,6 +24,6 @@ cppflags.h: cppflags
 .PHONY: clean
 
 clean:
-	/bin/rm -f $(EXE) *.da *.o *.D gmon.out cppflags.h
+	/bin/rm -f $(EXE) *.da *.o *.D gmon.out cppflags.h err core
 
 -include $(OBJS:.o=.D)

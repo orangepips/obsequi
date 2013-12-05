@@ -1,12 +1,12 @@
 
 #include "globals.h"
 #include "macros.h"
-
+#include "positional-values.h"
 
 //#define DEBUG_SCORE_MOVE
 
 static inline s32bit
-score_move(Board* boardx, Move move, s32bit player)
+score_move(Board* boardx, Move move)
 {
   u32bit* board = boardx->board;
   u32bit* opp_board = boardx->GetOpponent()->board;
@@ -44,14 +44,14 @@ score_move(Board* boardx, Move move, s32bit player)
   opp_board[col+1] ^= (1<<row);
   
   score *= 128;
-  score += g_first_move[player][row][col];
+  score += boardx->position->GetValue(row, col);
 
   return score;
 }
 
 extern void
 score_and_get_first(Board* board, Move movelist[MAXMOVES], s32bit num_moves,
-                    s32bit player, Move first)
+                    Move first)
 {
   s32bit i, max = -50000, max_index = -1;
 
@@ -72,14 +72,14 @@ score_and_get_first(Board* board, Move movelist[MAXMOVES], s32bit num_moves,
         movelist[i].info = 450000;
         max_index = i;
       } else {
-        movelist[i].info = score_move(board, movelist[i], player);
+        movelist[i].info = score_move(board, movelist[i]);
       }
     }
   }
 
   else {
     for(i = 0; i < num_moves; i++){
-      movelist[i].info = score_move(board, movelist[i], player);
+      movelist[i].info = score_move(board, movelist[i]);
       if(movelist[i].info > max){
         max = movelist[i].info;
         max_index = i;
