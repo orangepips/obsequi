@@ -4,8 +4,8 @@
 
 #include "board-ops.h"
 #include "countmoves.h"
-
 #include "structs.h"
+#include "score-board.h"
 
 // Basic board info which we keep track of.
 struct BasicInfo {
@@ -45,6 +45,25 @@ class Board {
     return false;
   }
 
+  bool IsGameOverExpensive(int* score) {
+    int a = does_next_player_win(this, 0);
+    if (a > 0) {
+      // current player wins.
+      *score = 5000;
+      return true;
+    }
+
+    int b = does_who_just_moved_win(opponent_, 0);
+    if(b >= 0) {
+      // opponent wins.
+      *score = -5000;
+      return true;
+    }
+  
+    *score = a - b;
+    return false;
+  }
+
  private:
   void UpdateSafe(int row) {
     int count = count_safe(board, row);
@@ -74,6 +93,8 @@ class Board {
  public:
   // TODO(nathan): need to migrate these all to private.
   u32bit board[32];
+
+  // Basic safe move/real move stats.
   BasicInfo info[32];
   BasicInfo info_totals;
 

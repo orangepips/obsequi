@@ -1,7 +1,6 @@
+#include "score-board.h"
 
 #include "globals.h"
-
-#define PRINT_DOES_X_WIN_INFO
 
 // If defined we just immediately return from each function with
 //   a value of -1. (In other words no winner yet.)
@@ -308,12 +307,8 @@ pack_safe(int num_rows, u32bit board[32], u32bit tmp_board[32],
 //#################################################################
 // 
 //#################################################################
-extern s32bit
-#ifdef PRINT_DOES_X_WIN_INFO
-does_next_player_win(Board* boardx, s32bit next_player, s32bit print)
-#else
-does_next_player_win(Board* boardx, s32bit next_player)
-#endif
+extern int
+does_next_player_win(Board* boardx, bool print)
 {
   // info we directly get from the board.
   s32bit prot;   // This is the number of protective regions.
@@ -390,9 +385,8 @@ does_next_player_win(Board* boardx, s32bit next_player)
   pack_safe(num_rows, board, tmp_board, &safe_op2, &safe_op1, &safe_op0);
 #endif
 
-#ifdef PRINT_DOES_X_WIN_INFO
   if(print){
-    fprintf(stderr, "%d moves next, do they win?\n", next_player);
+    //fprintf(stderr, "%d moves next, do they win?\n", next_player);
     fprintf(stderr, "prot %d, vuln2 %d(%d), vuln1 %d(%d), "
             "safe %d, unused %d, empty %d.\n",
             prot, vuln2, vuln2_w_prot, vuln1, vuln1_w_prot,
@@ -400,7 +394,6 @@ does_next_player_win(Board* boardx, s32bit next_player)
     fprintf(stderr, "safe_op2 %d, safe_op1 %d, safe_op0 %d.\n",
             safe_op2, safe_op1, safe_op0);
   }
-#endif
   
   {
     s32bit moves, opp_moves, x = 0;
@@ -477,12 +470,10 @@ does_next_player_win(Board* boardx, s32bit next_player)
     //========================================================
     r_value = moves - opp_moves;
 
-#ifdef PRINT_DOES_X_WIN_INFO
     if(print){
       printf("moves:%d, opp:%d.\n", moves, opp_moves);
       if(moves - opp_moves >= 0) printf("H WINS\n");
     }
-#endif
   }
 
   return r_value;
@@ -492,12 +483,8 @@ does_next_player_win(Board* boardx, s32bit next_player)
 //#################################################################
 // 
 //#################################################################
-extern s32bit
-#ifdef PRINT_DOES_X_WIN_INFO
-does_who_just_moved_win(Board* boardx, s32bit who_just_moved, s32bit print)
-#else
-does_who_just_moved_win(Board* boardx, s32bit who_just_moved)
-#endif
+extern int
+does_who_just_moved_win(Board* boardx, bool print)
 {
   // info we directly get from the board.
   s32bit prot;   // This is the number of protective regions.
@@ -586,9 +573,8 @@ does_who_just_moved_win(Board* boardx, s32bit who_just_moved)
     print = 0;
   }
   */
-#ifdef PRINT_DOES_X_WIN_INFO
   if(print){
-    fprintf(stderr, "%d just moved, do they win?\n", who_just_moved);
+    //fprintf(stderr, "%d just moved, do they win?\n", who_just_moved);
     fprintf(stderr, "prot %d, vuln2 %d(%d), vuln1 %d(%d), "
             "safe %d, unused %d, empty %d.\n",
             prot, vuln2, vuln2_w_prot, vuln1, vuln1_w_prot,
@@ -596,7 +582,6 @@ does_who_just_moved_win(Board* boardx, s32bit who_just_moved)
     fprintf(stderr, "safe_op2 %d, safe_op1 %d, safe_op0 %d.\n",
             safe_op2, safe_op1, safe_op0);
   }
-#endif
   
   {
     s32bit moves, opp_moves, x = 0;
@@ -638,12 +623,10 @@ does_who_just_moved_win(Board* boardx, s32bit who_just_moved)
     //========================================================
     r_value = moves - opp_moves;
 
-#ifdef PRINT_DOES_X_WIN_INFO
     if(print){
       printf("moves:%d, opp:%d.\n", moves, opp_moves);
       if(moves - opp_moves >= 0) printf("H WINS\n");
     }
-#endif
   }
 
   return r_value;

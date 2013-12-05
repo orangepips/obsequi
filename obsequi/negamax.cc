@@ -11,18 +11,13 @@
 // Statistics gathering variables and functions.
 //#################################################################
 
-//Determines if we should collect this data.
-#define COLLECT_STATS
-
 //=================================================================
 // Variables used for statistics gathering.
 //=================================================================
-#ifdef COLLECT_STATS
 static s32bit cut1 = 0, cut2 = 0, cut3 = 0, cut4 = 0;
 static s32bit stat_cutoffs[40];
 static s32bit stat_nodes[40];
 static s32bit stat_nth_try[40][10];
-#endif
 
 //=================================================================
 // Print the statistics which we have gathered.
@@ -30,7 +25,6 @@ static s32bit stat_nth_try[40][10];
 static void
 print_stats()
 {
-#ifdef COLLECT_STATS
   s32bit i, j;
   
   printf("%d %d %d %d.\n\n", cut1, cut2, cut3, cut4);
@@ -44,9 +38,6 @@ print_stats()
       printf(" >%d.\n", stat_nth_try[i][5]);
     }
   }
-#else
-  printf("\n");
-#endif
 }
 
 //=================================================================
@@ -55,7 +46,6 @@ print_stats()
 static void
 init_stats()
 {
-#ifdef COLLECT_STATS
   s32bit i, j;
 
   // zero all data.
@@ -65,7 +55,6 @@ init_stats()
     stat_cutoffs[i] = 0;
     stat_nodes[i] = 0;
   }
-#endif
 }
 
 
@@ -304,17 +293,14 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 {
   Move   movelist[MAXMOVES], best;
   s32bit whos_turn = whos_turn_t & PLAYER_MASK;
-  s32bit opponent  = whos_turn_t ^ PLAYER_MASK;
   s32bit value;
   s32bit init_alpha = alpha, init_beta = beta;
   u32bit start_nodes = g_num_nodes;
   Move   forcefirst;
-  s32bit who_wins_value;
 
   s32bit stage = 0, state = 0, true_count, i = 0, num_moves = 1;
   
   Board* curr = g_boardx[whos_turn];
-  Board* opp = curr->GetOpponent();
 
 #ifdef DYNAMIC_POSITION_VALUES
   s32bit dyn_set;
@@ -322,36 +308,21 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
   // increment a couple of stats
   g_num_nodes++;
-#ifdef COLLECT_STATS
   stat_nodes[starting_depth - depth_remaining]++;
-#endif
 
   // if no depth remaining stop search.
   if( depth_remaining <= 0 ){
-    s32bit a = does_next_player_win(curr, whos_turn, 0);
-    if (a > 0) {
-      // current player wins.
-      return 5000;
-    }
-
-    s32bit b = does_who_just_moved_win(opp, opponent, 0);
-    if(b >= 0) {
-      // opponent wins.
-      return -5000;
-    }
-  
-    return a - b;
+    int rv;
+    curr->IsGameOverExpensive(&rv);
+    return rv;
   }
-  
 
   //------------------------------------------
   // Can we determine a winner yet (simple check).
   //------------------------------------------
   int rv;
   if (curr->IsGameOver(&rv)) {
-#ifdef COLLECT_STATS
     cut1++;
-#endif
     return rv;
   }
 
@@ -371,48 +342,22 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   // Can we determine a winner yet (look harder).
   //------------------------------------------
 
-  // does current player win
-  if( (who_wins_value = does_next_player_win(curr, whos_turn, 0)) > 0 ) {
+{  
+  int rv;
+  if (curr->IsGameOverExpensive(&rv)) {
+    cut3++;
+    return rv;
 
+/*
 #ifdef DEBUG_NEGAMAX
     if(random() % 1000000 == -1){
-      does_next_player_win(curr, whos_turn, 1);
+      does_next_player_win(curr, 1);
       print_board(whos_turn);
     }
 #endif
-
-#ifdef COLLECT_STATS
-    cut3++;
-#endif
-    return 5000;
+*/
   }
-    
-  // does opponent win
-  if( (who_wins_value = does_who_just_moved_win(opp, opponent, 0)) >= 0 ) {
-
-#ifdef DEBUG_NEGAMAX
-    if(who_wins_value < 3){ // && random() % 500 == -1){
-      does_who_just_moved_win(opp, opponent, 1);
-      //  print_board(opponent);
-    }
-#endif  
-
-#ifdef COLLECT_STATS
-    cut4++;
-#endif
-    return -5000;
-  }
-
-#if 0
-  {
-    s32bit num;
-    num = move_generator_stage1(movelist, whos_turn);
-    num = move_generator_stage2(movelist, num, whos_turn);
-    if(move_generator(movelist, whos_turn) != num)
-      fatal_error(1, "NOPE\n");
-  }
-#endif
-
+}
 
   //------------------------------------------
   // Generate child nodes and examine them.
@@ -486,33 +431,14 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       if(dyn_set != 0) unset_move_value(movelist[i], whos_turn);
 #endif
 
-#if 0
-      if(starting_depth - depth_remaining == 8) {
-        s32bit g;
-        
-        printf("goof:");
-        
-        for(g = 0; g < 8; g++){
-          printf(" :%c:%d(%d,%d)", 
-                 (g_move_player[g] == VERTICAL) ? 'V' : 'H',
-                 g_move_number[g],
-                 g_move_position[g].array_index - 1,
-                 g_move_position[g].mask_index - 1);
-        }
-        printf("\n");
-      }
-#endif
-
       // If this is a cutoff, break.
       if(value >= beta){
         alpha = value;
         best  = movelist[i];
         
-#ifdef COLLECT_STATS
         stat_cutoffs[starting_depth - depth_remaining]++;
         if(i < 5) stat_nth_try[starting_depth - depth_remaining][i]++;
         else      stat_nth_try[starting_depth - depth_remaining][5]++;
-#endif
         break;
       }
       

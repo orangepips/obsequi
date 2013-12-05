@@ -3,12 +3,6 @@
 #include "globals.h"
 
 
-extern void
-init_static_tables()
-{
-}
-
-
 KeyInfo      g_keyinfo[2][32][32];
 
 static void

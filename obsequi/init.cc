@@ -32,8 +32,6 @@ initialize_solver()
         g_zobrist[i][j] = random() & HASHMASK;
       }
     }
-
-    init_static_tables();
   }
 
   init_less_static_tables();

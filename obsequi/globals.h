@@ -13,8 +13,8 @@
 //########################################################
 
 // Need to define this in a better place...
-s32bit does_next_player_win(Board* board, s32bit next_player, s32bit print);
-s32bit does_who_just_moved_win(Board* board, s32bit who_just_moved, s32bit print);
+//s32bit does_next_player_win(Board* board, s32bit print);
+//s32bit does_who_just_moved_win(Board* board, s32bit print);
 
 //=================================================================
 // Move ordering uses a simple evaluation function as well as
@@ -53,10 +53,6 @@ update_real(int num_rows, u32bit board[32], s32bit player, s32bit row)
 ;
 
 void init_less_static_tables();
-
-
-void init_static_tables();
-
 
 
 // make the bitboard consistent with the info past into this function.

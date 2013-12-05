@@ -8,7 +8,7 @@ OBJS= obsequi.o utils.o board.o \
       toggle_move.o move-gen.o move_sort.o hash.o \
       display.o \
       tables.o init.o lastbit.o countmoves.o \
-      does_x_win.o
+      score-board.o
 
 $(EXE): $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) -o $@
