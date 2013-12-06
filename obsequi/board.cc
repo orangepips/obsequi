@@ -1,5 +1,6 @@
 #include "board.h"
 
+#include "move.h"
 #include "consts.h"
 #include "positional-values.h"
 

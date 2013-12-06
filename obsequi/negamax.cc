@@ -1,6 +1,6 @@
 
 #include "globals.h"
-#include "move-gen.h"
+#include "move.h"
 #include "positional-values.h"
 #include "hash-table.h"
 #include "countbits.h"

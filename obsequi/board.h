@@ -5,9 +5,9 @@
 #include "board-ops.h"
 #include "countmoves.h"
 #include "score-board.h"
-#include "structs.h"
 
 class PositionalValues;
+class Move;
 
 // Basic board info which we keep track of.
 struct BasicInfo {
