@@ -21,7 +21,7 @@ OPT += ["-O3 -march=native"]
 OPT += ["-g -rdynamic"]
 
 # Number of bits used in the zobrist codes.
-# Size of the hashtable will be (1 << HASHCODEBITS). 
+# Size of the hashtable will be (1 << HASHCODEBITS).
 OPT += ["-DHASHCODEBITS=24"]
 
 # Two stage move generation.

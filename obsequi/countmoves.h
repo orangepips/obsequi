@@ -13,7 +13,7 @@ static inline int
 countmoves32_calc(u32bit mask) {
   s32bit count = 0;
   u32bit tmp;
-  
+
   while(mask){
     tmp = (mask&-mask);           // least sig bit of m
     mask &= ~(tmp | (tmp << 1));  // remove bit and next bit.

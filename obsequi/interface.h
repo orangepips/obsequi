@@ -3,21 +3,9 @@
 #define OBSEQUI_INTERFACE_H
 
 //########################################################
-// 
+//
 //########################################################
 void   print_external();
-
-//########################################################
-// This function initializes the solver.
-//
-// This includes things like allocating and zeroing data
-//   for the hashtable.
-//
-// If it is called a second time it will re-zero all the
-//   data, (restart from scratch).
-//########################################################
-void   initialize_solver ();
-
 
 //########################################################
 // This function gives the solver the current board that

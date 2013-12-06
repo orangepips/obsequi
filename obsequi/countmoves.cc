@@ -9,11 +9,11 @@ void
 __attribute__ ((constructor))
 init_movetable() {
   u32bit i = 0, mask, tmp = 0, count;
-  
+
   while(i < 65536){
     mask = i;
     count = 0;
-    
+
     while(mask){
       tmp = (mask&-mask);           // least sig bit of m
       mask &= ~(tmp | (tmp << 1));  // remove bit and next bit.
@@ -35,7 +35,7 @@ void
 compare_methods(u32bit x) {
   int b16 = countmoves32_16bitmap(x);
   int bn = countmoves32_calc(x);
- 
+
   if (!(x & ~0xffff)) {
     int b8 = countmoves16_16bitmap(x);
     if (b8 != bn) {

@@ -1,5 +1,6 @@
-#include "consts.h"
 #include "board.h"
+
+#include "consts.h"
 #include "positional-values.h"
 
 Board::Board(int num_rows, int num_cols)
@@ -37,7 +38,7 @@ void Board::Initialize(int num_rows, int num_cols, Board* opponent) {
   }
   this->info_totals.real = 0;
   this->info_totals.safe = 0;
-  
+
   // Clear positions where there isn't a piece.
   for(int i = 0; i < num_rows; i++) {
     for(int j = 0; j < num_cols; j++) {
@@ -84,7 +85,7 @@ void Board::PrintInfo() const {
 
   sprintf(str[1], "Number of rows    = %d", curr.num_rows_);
   sprintf(str[2], "Number of columns = %d", opp.num_rows_);
-  
+
   printf("%7s %15s %15s\n",
          null_str, "Horizontal", "Vertical");
   printf("%7s %7s %7s %7s %7s\n",
@@ -117,19 +118,19 @@ void Board::ToggleMove(const Move& move) {
 
   int row = move.array_index;
   int col = move.mask_index;
-  
+
   this->board[row]   ^= (3<<col);
   opp->board[col]   ^= (1<<row);
   opp->board[col+1] ^= (1<<row);
-  
+
   // update safe moves
   if(row - 1 != 0) this->UpdateSafe(row-1);
   this->UpdateSafe(row);
   if(row != this->num_rows_) this->UpdateSafe(row+1);
-  
+
   if(col - 1 != 0) opp->UpdateSafe(col-1);
   if(col + 1 != opp->num_rows_) opp->UpdateSafe(col+2);
-  
+
   // update real moves
   this->UpdateReal(row);
 

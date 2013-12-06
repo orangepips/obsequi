@@ -1,6 +1,9 @@
 #ifndef HASH_TABLE_H
 #define HASH_TABLE_H
 
+#include "structs.h"
+#include "utils.h"
+
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]);
 
 void check_hash_code_sanity();

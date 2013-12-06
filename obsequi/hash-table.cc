@@ -1,5 +1,6 @@
-#include "globals.h"
 #include "hash-table.h"
+
+#include "globals.h"
 
 //########################################################
 // Constants used in conjuction with the transposition table
@@ -121,11 +122,11 @@ extern void
 print_keyinfo_table(s32bit player, s32bit with_hashcode)
 {
   s32bit r, c;
-  
+
   for(r = 0; r < 32; r++)
     for(c = 0; c < 32; c++){
       if(g_keyinfo[player][r][c].norm.bit1_index != -1){
-      
+
         printf("(%2d,%2d)>>  ", r, c);
 
         print_keyinfo(g_keyinfo[player][r][c].norm, with_hashcode);
@@ -153,7 +154,7 @@ extern void
 print_hashentry(s32bit index)
 {
   Hash_Entry entry = g_trans_table[index];
-  
+
   printf("Hash entry: %d.\n", index);
   printf(" Key:%8X:%8X:%8X:%8X, n:%u, d:%d, w:%d"
          ", v:%d, t:%d, int:%d.\n",
@@ -172,20 +173,20 @@ negate_keyinfo(KeyInfo_s *keyinfo)
   keyinfo->bit1_index = keyinfo->bit2_index = -1;
   keyinfo->hash_code = 0;
 }
- 
+
 static void
 fill_in_hash_code(KeyInfo_s *info, s32bit num_cols)
 {
   s32bit r, c, hash = 0;
-    
+
   r = info->bit1_index/num_cols;
   c = info->bit1_index%num_cols;
-  
+
   hash = g_zobrist[r+1][c+1];
-  
+
   r = info->bit2_index/num_cols;
   c = info->bit2_index%num_cols;
-  
+
   hash ^= g_zobrist[r+1][c+1];
 
   info->hash_code = hash;
@@ -201,12 +202,12 @@ fill_in_key_entry(KeyInfo *keyinfo, s32bit num_rows, s32bit num_cols)
     negate_keyinfo( & keyinfo->flipVH);
   } else {
     s32bit r1, c1, r2, c2;
-    
+
     r1 = keyinfo->norm.bit1_index/num_cols;
     c1 = keyinfo->norm.bit1_index%num_cols;
     r2 = keyinfo->norm.bit2_index/num_cols;
     c2 = keyinfo->norm.bit2_index%num_cols;
-  
+
     keyinfo->flipV.bit1_index  = (r1*num_cols)+(num_cols - c1 - 1);
     keyinfo->flipV.bit2_index  = (r2*num_cols)+(num_cols - c2 - 1);
 
@@ -229,14 +230,14 @@ extern void
 init_less_static_tables()
 {
   s32bit n_rows, n_cols, i, j, k;
-  
+
   n_rows = g_board_size[HORIZONTAL], n_cols = g_board_size[VERTICAL];
-  
+
   for(i = 0; i < 32; i++)
     for(j = 0; j < 32; j++)
       for(k = 0; k < 2; k++)
         negate_keyinfo( & g_keyinfo[k][i][j].norm);
-  
+
   for(i = 0; i < n_rows; i++){
     for(j = 0; j < n_cols; j++){
       //Horizontal Entry
@@ -244,7 +245,7 @@ init_less_static_tables()
         g_keyinfo[HORIZONTAL][i+1][j+1].norm.bit1_index = (i*n_cols)+j;
         g_keyinfo[HORIZONTAL][i+1][j+1].norm.bit2_index = (i*n_cols)+(j+1);
       }
-      
+
       //Vertical Entry
       if(i + 1 < n_rows){
         g_keyinfo[VERTICAL][j+1][i+1].norm.bit1_index   = (i*n_cols)+j;
@@ -252,7 +253,7 @@ init_less_static_tables()
       }
     }
   }
-  
+
   for(i = 0; i < 32; i++)
     for(j = 0; j < 32; j++)
       for(k = 0; k < 2; k++)
@@ -267,7 +268,7 @@ initialize_solver()
   if(g_trans_table == NULL){
     // first time initialization stuff.
     g_trans_table = (Hash_Entry*)malloc(HASHSIZE*sizeof(Hash_Entry));
-  
+
     // initialize zobrist values
     srandom(1);
     for(i=1; i<31; i++) {
@@ -286,7 +287,7 @@ init_hashkey_code(Hash_Key* key) {
   int n_cols = g_boardx[VERTICAL]->GetNumRows();
 
   key->code = 0;
-  
+
   for(int i = 0; i < n_rows; i++)
     for(int j = 0; j < n_cols; j++){
       int index = (i*n_cols) + j;
@@ -316,13 +317,13 @@ init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
 
         index = (i*num_cols)+j;
         g_norm_hashkey.key[index/32] |= NTH_BIT(index%32);
-        
+
         index = (i*num_cols) + (num_cols - j - 1);
         g_flipV_hashkey.key[index/32] |= NTH_BIT(index%32);
-        
+
         index = ( (num_rows - i - 1) *num_cols) + j;
         g_flipH_hashkey.key[index/32] |= NTH_BIT(index%32);
-        
+
         index = ( (num_rows - i - 1) *num_cols) + (num_cols - j - 1);
         g_flipVH_hashkey.key[index/32] |= NTH_BIT(index%32);
       }
@@ -351,7 +352,7 @@ check_hashkey_bit_set(Hash_Key key, s32bit index)
   if(! (key.key[index/32] & NTH_BIT(index%32)) ){
 
     printf("%d", index);
-    
+
     print_hashkey(key);
 
     fatal_error(1, "HashKey Incorrect.\n");
@@ -364,7 +365,7 @@ check_hashkey_bit_not_set(Hash_Key key, s32bit index)
   if( (key.key[index/32] & NTH_BIT(index%32)) ){
 
     printf("%d", index);
-    
+
     print_hashkey(key);
 
     fatal_error(1, "HashKey Incorrect.\n");
@@ -375,19 +376,19 @@ static void
 check_hashkey_code(Hash_Key key)
 {
   s32bit i, j, index, code;
-  
+
   int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
   int n_cols = g_boardx[VERTICAL]->GetNumRows();
 
   code = key.code;
-  
+
   for(i = 0; i < n_rows; i++)
     for(j = 0; j < n_cols; j++){
       index = (i*n_cols) + j;
       if(key.key[index/32] & NTH_BIT(index%32))
         code ^= g_zobrist[i+1][j+1];
     }
-  
+
   if(code != 0){
     fatal_error(1, "Invalid hash code.\n");
   }
@@ -397,35 +398,35 @@ extern void
 check_hash_code_sanity()
 {
   s32bit i, j, index;
-  
+
   int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
   int n_cols = g_boardx[VERTICAL]->GetNumRows();
-  
+
   for(i = 0; i < n_rows; i++)
     for(j = 0; j < n_cols; j++)
       if(g_boardx[HORIZONTAL]->board[i+1] & NTH_BIT(j+1)) {
 
         index = (i*n_cols)+j;
         check_hashkey_bit_set(g_norm_hashkey, index);
-        
+
         index = (i*n_cols) + (n_cols - j - 1);
         check_hashkey_bit_set(g_flipV_hashkey, index);
-        
+
         index = ( (n_rows - i - 1) *n_cols) + j;
         check_hashkey_bit_set(g_flipH_hashkey, index);
-        
+
         index = ( (n_rows - i - 1) *n_cols) + (n_cols - j - 1);
         check_hashkey_bit_set(g_flipVH_hashkey, index);
       } else {
         index = (i*n_cols)+j;
         check_hashkey_bit_not_set(g_norm_hashkey, index);
-        
+
         index = (i*n_cols)                  + (n_cols - j - 1);
         check_hashkey_bit_not_set(g_flipV_hashkey, index);
-        
+
         index = ( (n_rows - i - 1) *n_cols) + j;
         check_hashkey_bit_not_set(g_flipH_hashkey, index);
-        
+
         index = ( (n_rows - i - 1) *n_cols) + (n_cols - j - 1);
         check_hashkey_bit_not_set(g_flipVH_hashkey, index);
       }
@@ -472,11 +473,11 @@ void toggle_hash_code(int whos_turn, const Move& move) {
 
 #define TABLE_SET_KEY(table,index,k)                          \
    table[index].key[0] = k[0], table[index].key[1] = k[1],    \
-   table[index].key[2] = k[2], table[index].key[3] = k[3]; 
+   table[index].key[2] = k[2], table[index].key[3] = k[3];
 
 #define TABLE_CMP_KEY(table,index,k)                              \
    (table[index].key[0] == k[0] && table[index].key[1] == k[1] && \
-    table[index].key[2] == k[2] && table[index].key[3] == k[3]) 
+    table[index].key[2] == k[2] && table[index].key[3] == k[3])
 
 
 #define STORE_ENTRY(x)                                          \
@@ -578,18 +579,18 @@ hashlookup(s32bit *value, s32bit *alpha, s32bit *beta,
   rv = hash_lookup_entry(g_norm_hashkey, value, alpha, beta,
                   depth_remaining, force_first, player);
   if (rv != -1) return rv;
-    
+
   rv = hash_lookup_entry(g_flipV_hashkey, value, alpha, beta,
                   depth_remaining, force_first, player);
   if (rv != -1) return rv;
-    
+
   rv = hash_lookup_entry(g_flipH_hashkey, value, alpha, beta,
                   depth_remaining, force_first, player);
   if (rv != -1) return rv;
-    
+
   rv = hash_lookup_entry(g_flipVH_hashkey, value, alpha, beta,
                   depth_remaining, force_first, player);
   if (rv != -1) return rv;
-    
+
   return 0;
 }

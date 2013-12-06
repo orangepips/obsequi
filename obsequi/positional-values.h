@@ -13,7 +13,7 @@ class PositionalValues {
   int GetValue(int row, int col) const {
     return positional_values_[row][col];
   }
-  
+
   void Print() const;
 
  private:

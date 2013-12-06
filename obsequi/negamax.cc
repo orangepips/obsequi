@@ -7,7 +7,7 @@
 
 #include <time.h>
 #include <ctype.h>
-
+#include <algorithm>
 
 //#################################################################
 // Statistics gathering variables and functions.
@@ -67,24 +67,17 @@ init_stats()
 //#define RECORD_MOVES
 //#define DEBUG_NEGAMAX
 
-
-extern s32bit  debug_score_move;
-
-u64bit         g_num_nodes;
-
 s32bit         g_empty_squares = 0;
 
+// Stats
+u64bit         g_num_nodes;
 s32bit         g_move_number[128];
+static s32bit g_starting_depth;
 
 #ifdef RECORD_MOVES
 static s32bit  g_move_player[128];
 static Move    g_move_position[128];
 #endif
-
-s32bit         g_print = 0;
-
-
-static s32bit starting_depth;
 
 
 //#################################################################
@@ -93,6 +86,7 @@ static s32bit starting_depth;
 static s32bit
 negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta);
 
+bool wayToSort(Move i, Move j) { return i.info > j.info; }
 
 //=================================================================
 // Search for move function. (Negamax Driver)
@@ -114,8 +108,6 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   g_empty_squares = 0;
   for(i = 0; i < curr->GetNumRows(); i++)
     g_empty_squares += countbits32( ~(curr->board[i+1]) );
-
-  init_stats();
 
   // Can we already determine a winner?
   int rv;
@@ -147,7 +139,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     init_stats();
 
     // set what the starting max depth is.
-    starting_depth = d;
+    g_starting_depth = d;
 
     // iterate through all the possible moves.
     for(i = 0; i < num_moves; i++){
@@ -233,31 +225,9 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       break;
     }
 
-    // use a stable sort algorithm
-    {
-      Move swp;
-      s32bit max, index, j;
-
-      for(i=0; i<num_moves; i++) {
-        max = movelist[i].info;
-        index = i;
-
-        for(j=i+1; j < num_moves; j++)
-          if(movelist[j].info > max){
-            max = movelist[j].info;
-            index = j;
-          }
-
-        if(index != i){
-          swp = movelist[index];
-          //          printf("%d %d\n", index, i);
-          for(j = index; j != i; j--){
-            movelist[j] = movelist[j-1];
-          }
-          movelist[i] = swp;
-        }
-      }
-    }
+    //std::stable_sort(movelist, movelist+num_moves, wayToSort);
+    //std::__inplace_stable_sort(movelist, movelist+num_moves, wayToSort);
+    sort_moves(movelist, 0, num_moves);
 
     printf("The value is %d at a depth of %d.\n", value, d);
     printf("Nodes: %u.\n", (u32bit)g_num_nodes);
@@ -289,7 +259,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
   // increment a couple of stats
   g_num_nodes++;
-  stat_nodes[starting_depth - depth_remaining]++;
+  stat_nodes[g_starting_depth - depth_remaining]++;
 
   // if no depth remaining stop search.
   if( depth_remaining <= 0 ){
@@ -322,9 +292,6 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   //------------------------------------------
   // Can we determine a winner yet (look harder).
   //------------------------------------------
-
-{
-  int rv;
   if (curr->IsGameOverExpensive(&rv)) {
     cut3++;
     return rv;
@@ -338,7 +305,6 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 #endif
 */
   }
-}
 
   //------------------------------------------
   // Generate child nodes and examine them.
@@ -384,10 +350,10 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
     for(; i < num_moves; i++){
 
       // A few statistics
-      g_move_number[starting_depth - depth_remaining] = i;
+      g_move_number[g_starting_depth - depth_remaining] = i;
 #ifdef RECORD_MOVES
-      g_move_player[starting_depth - depth_remaining] = whos_turn;
-      g_move_position[starting_depth - depth_remaining] = movelist[i];
+      g_move_player[g_starting_depth - depth_remaining] = whos_turn;
+      g_move_position[g_starting_depth - depth_remaining] = movelist[i];
 #endif
 
       // make move.
@@ -408,9 +374,9 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
         alpha = value;
         best  = movelist[i];
 
-        stat_cutoffs[starting_depth - depth_remaining]++;
-        if(i < 5) stat_nth_try[starting_depth - depth_remaining][i]++;
-        else      stat_nth_try[starting_depth - depth_remaining][5]++;
+        stat_cutoffs[g_starting_depth - depth_remaining]++;
+        if(i < 5) stat_nth_try[g_starting_depth - depth_remaining][i]++;
+        else      stat_nth_try[g_starting_depth - depth_remaining][5]++;
         break;
       }
 

@@ -6,7 +6,7 @@
 //=================================================================
 PositionalValues::PositionalValues(int num_rows, int num_cols) {
   int count;
-  
+
   // set them all to zero.
   for(int i = 0; i < 32; i++)
     for(int j = 0; j < 32; j++)
@@ -87,7 +87,7 @@ init_move_value     ()
 {
   s32bit i, j, k;
   set_move_value_current = 127;
-  
+
   for(i = 0; i < 2; i++)
     for(j = 0; j < 32; j++)
       for(k = 0; k < 32; k++)
@@ -103,7 +103,7 @@ set_move_value      (Move move, s32bit player)
 {
   if(g_first_move[player][move.array_index][move.mask_index] != 0)
     return 0;
-  
+
   set_position_value(player, move.array_index, move.mask_index,
                      set_move_value_current--);
   return 1;
@@ -118,7 +118,7 @@ unset_move_value    (Move move, s32bit player)
 {
   set_move_value_current
     = g_first_move[player][move.array_index][move.mask_index];
-  
+
   set_position_value(player, move.array_index, move.mask_index, 0);
 }
 */

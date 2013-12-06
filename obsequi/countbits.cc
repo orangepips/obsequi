@@ -17,7 +17,7 @@ init_countbits()
   for(i = 1; i < 256; i++){
     countbits8[i] = (i & 1) + countbits8[i >> 1];
   }
- 
+
   countbits16[0] = 0;
   for(i = 1; i < 65536; i++){
     countbits16[i] = (i & 1) + countbits16[i >> 1];
@@ -32,7 +32,7 @@ compare_counts(u32bit x) {
   int b8 = countbits32_8bitmap(x);
   int b16 = countbits32_16bitmap(x);
   int bn = countbits32_gccbuiltin(x);
-  
+
   if (b8 != b16) {
     printf("FAILED b8-b16: %d %d %d\n", x, b8, b16);
     exit(1);

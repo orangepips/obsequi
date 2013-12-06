@@ -1,7 +1,7 @@
 #include "globals.h"
 
 //========================================================
-// This function compares the Horizontal board info to 
+// This function compares the Horizontal board info to
 //  the vertical board info.
 //========================================================
 /*
@@ -10,20 +10,20 @@ check_board_sanity()
 {
   s32bit i, j;
   s32bit count;
-  
+
   for(j = 0; j < g_board_size[HORIZONTAL] + 2; j++)
     for(i = 0; i < g_board_size[VERTICAL] + 2; i++){
       count = 0;
-      
+
       if(g_board[VERTICAL][i] & NTH_BIT(j)) count++;
       if(g_board[HORIZONTAL][j] & NTH_BIT(i)) count++;
-      
+
       if(count == 1){
         print_board(VERTICAL);
-        print_board(HORIZONTAL);    
-        
+        print_board(HORIZONTAL);
+
         printf("%d %d - %d.\n", j, i, count);
-        
+
         fatal_error(1, "Board is inconsistent.\n");
       }
     }
@@ -52,34 +52,21 @@ print_u64bit(u64bit val)
 {
   s32bit vals[10];
   s32bit i = 0;
-  
+
   do {
     vals[i] = val % 1000;
     val = val / 1000;
     i++;
   } while(val != 0);
-  
+
   if(i > 10) fatal_error(1, "Too large???\n");
-  
+
   printf("%d", vals[--i]);
-  
+
   while(i != 0)
     printf(",%3d", vals[--i]);
 }
 
-
-extern s32bit g_print;
-
-/*
-extern void
-print_current_state()
-{
-  print_board(HORIZONTAL);
-  printf("\n");
-  print_board_info(HORIZONTAL);
-  g_print = 0;
-}
-*/
 
 
 extern const char*
@@ -87,10 +74,8 @@ current_search_state()
 {
   static char* str = NULL;
 
-  g_print = 1;
-      
   if(str != NULL) free(str);
- 
+
   int x = asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d.",
                    u64bit_to_string(g_num_nodes),
                    g_move_number[1], g_move_number[2], g_move_number[3],

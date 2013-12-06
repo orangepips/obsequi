@@ -140,5 +140,5 @@ extern void
 _fatal_error_aux(const char *file, const s32bit line,
                  const s32bit err_num, const char *format, ... )
      __attribute__ ((format (printf, 4, 5)));
-     
+
 #endif

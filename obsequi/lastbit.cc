@@ -12,7 +12,7 @@ __attribute__ ((constructor))
 init_lastbit()
 {
   s32bit i;
-  
+
   lastbit16[0] = 100;
   for(i = 1; i < 65536; i++){
     if(i&NTH_BIT(0)) {lastbit16[i] = 0; continue;}
@@ -32,7 +32,7 @@ init_lastbit()
     if(i&NTH_BIT(14)) {lastbit16[i] = 14; continue;}
     if(i&NTH_BIT(15)) {lastbit16[i] = 15; continue;}
   }
-  
+
   lastbit8[0] = 100;
   for(i = 1; i < 256; i++){
     if(i&NTH_BIT(0)) {lastbit8[i] = 0; continue;}
@@ -54,7 +54,7 @@ compare_methods(u32bit x) {
   int b8 = lastbit32_8bitmap(x);
   int b16 = lastbit32_16bitmap(x);
   int bn = lastbit32_gccbuiltin(x);
-  
+
   if (b8 != b16) {
     printf("FAILED b8-b16: %d %d %d\n", x, b8, b16);
     exit(1);

@@ -1,6 +1,6 @@
 #include "globals.h"
 
-Board* g_boardx[2]; 
+Board* g_boardx[2];
 s32bit g_board_size[2] = {-1,-1};
 
 extern void
@@ -17,7 +17,7 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   g_boardx[VERTICAL] = horz->GetOpponent();
 
   init_hashtable(num_rows, num_cols, board);
-  
+
   horz->Print();
   printf("\n");
   horz->PrintInfo();

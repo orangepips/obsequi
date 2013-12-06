@@ -31,7 +31,7 @@ count_real(const u32bit board[32], s32bit row)
 {
   // mask contains a bit for each real move.
   u32bit mask= ~(board[row] | (board[row] << 1));
-  
+
   return countmoves32(mask);
 }
 

@@ -4,8 +4,8 @@
 
 #include "board-ops.h"
 #include "countmoves.h"
-#include "structs.h"
 #include "score-board.h"
+#include "structs.h"
 
 class PositionalValues;
 
@@ -38,7 +38,7 @@ class Board {
       *score = 5000;
       return true;
     }
-    
+
     if(opponent_->info_totals.safe >= this->info_totals.real){
       // opponent wins.
       *score = -5000;
@@ -61,7 +61,7 @@ class Board {
       *score = -5000;
       return true;
     }
-  
+
     *score = a - b;
     return false;
   }
@@ -76,7 +76,7 @@ class Board {
 
   void UpdateReal(int row) {
     int count = count_real(board, row);
-  
+
     info_totals.real += count - info[row].real;
     info[row].real = count;
   }
@@ -101,7 +101,7 @@ class Board {
   BasicInfo info_totals;
 
   PositionalValues* position;
-  
+
  private:
   // Disallow copy and assign.
   Board(const Board&);

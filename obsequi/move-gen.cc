@@ -57,11 +57,11 @@ move_generator_stage1(const Board& board, Move movelist[]) {
   for(int i = 0; i < board.GetNumRows(); i++){
     u32bit curr_row = rows[i+1];
     u32bit prot_rows = rows[i] & rows[i+2];
- 
+
     // m will contain a 1 at each position that there is a move
     // which is a vulnerable move with no protected squares.
     u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1)));
- 
+
     while(m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.

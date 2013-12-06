@@ -88,22 +88,22 @@ main(int argc, char** argv)
     get_solve_command();
     if(!main_batch) sig_alrm_setup();
   }
-  
+
   sig_int_setup();
-  
+
   // start solver.
   {
     s32bit row, col;
     u64bit nodes;
     s32bit score;
     const char*  num_nodes;
-    
+
     score = search_for_move(main_whos_turn, &row, &col, &nodes);
-    
+
     sig_block();
-    
+
     num_nodes = u64bit_to_string(nodes);
-    
+
     // print results.
     if(score >= 5000){
       printf("winner %c, move (%d,%d), nodes %s.\n",
@@ -116,26 +116,26 @@ main(int argc, char** argv)
       printf("Undecided, Best score: %d, nodes %s.\n",
              score, num_nodes);
     }
-    
+
     fflush(stdout);
-    
+
     if(lock_file){
       char winner = 0;
-      
+
       if(score >= 5000) winner = main_whos_turn;
       else if(score <= -5000) winner = (main_whos_turn == 'V') ? 'H' : 'V';
       else fatal_error(1, "Undecided.\n");
-      
+
       write_to_lock_file(winner, num_nodes);
     }
   }
-  
+
   // if not in batch mode don't exit until stdin has been closed.
   fcntl(STDIN_FILENO, F_SETFL, 0);
   if (!main_batch){
     while(getchar() != EOF);
   }
-  
+
   return 0;
 }
 
@@ -172,34 +172,34 @@ get_solve_command()
   char   c1, c2;
 
   s32bit r, c;
-    
+
   while( (len = getline(&line, &line_size, stdin)) != -1){
     s32bit t;
-    
+
     if(len > 0){
       if(blocks != NULL) blocks = (char*)realloc(blocks, line_size);
       else               blocks = (char*)malloc(line_size);
     } else continue;
     line[len - 1] = 0;
-    
+
     t = sscanf(line, "solve rows %u cols %u %c%s %c",
                &num_rows, &num_cols, &c1, blocks, &c2);
-    
+
     if(t != 3 && t != 5){
       fprintf(stderr, "Invalid command: '%s'.\n", line);
       continue;
     }
-          
+
     if(num_rows > 30){
       fprintf(stderr, "Too many rows: %u > 30.\n", num_rows);
       continue;
     }
-    
+
     if(num_cols > 30){
       fprintf(stderr, "Too many cols: %u > 30.\n", num_cols);
       continue;
     }
-      
+
     if(num_cols * num_rows > 256){
       fprintf(stderr,
               "Search space too large: %u > 256.\n", num_cols*num_rows);
@@ -208,10 +208,10 @@ get_solve_command()
 
     for(r = 0; r < 30; r++)
       for(c = 0; c < 30; c++) board[r][c] = 0;
-    
+
     if(t == 5) {
       char *tok;
-      
+
       c1 = toupper(c1);
       if(c1 != 'B') {
         fprintf(stderr, "Invalid command: '%s'.\n", line);
@@ -232,20 +232,20 @@ get_solve_command()
         }
 
         board[r][c] = 1;
-        
+
         tok = strtok(NULL, ";");
       }
       if(c1 == 0) continue;
     } else {
       c2 = c1;
     }
-    
+
     c2 = toupper(c2);
     if(c2 != 'V' && c2 != 'H'){
       fprintf(stderr, "Invalid players turn: %c.\n", c2);
       continue;
     }
-    
+
     // everything should be initialized properly at this point.
     printf("Starting\n");
     fflush(stdout);
@@ -265,7 +265,7 @@ get_solve_command()
   main_whos_turn = c2;
 
   initialize_board(num_rows, num_cols, board);
-  
+
   //print_external(); exit(0);
 
   free(line);
@@ -282,14 +282,14 @@ get_other_commands()
   static size_t  line_size;
   static char   *line;
   char c1;
-  
+
   fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
-  
+
   // get next line of input, exit at end of input.
   while (getline(&line, &line_size, stdin) > 0){
 
     printf("%s", line);
-    
+
     // stop the search.
     if(sscanf(line, "stop%c", &c1) == 1){
       exit(0);
@@ -327,33 +327,33 @@ static void
 decode_switches(int argc, char **argv)
 {
   int c;
-  
+
   while ((c = getopt(argc, argv, "wehl:t:v")) != -1){
     switch(c){
     case 'e':
       printf("%s", option_string);
       exit(0);
-      
+
     case 'h':
       printf("No help available in this version.\n");
       exit(0);
-      
+
     case 'l':
       lock_file = strdup(optarg);
       break;
-      
+
     case 't':
       stop_minutes = atoi(optarg);
       break;
-      
+
     case 'v':
       printf("No version info available.\n");
       exit(0);
-      
+
     case 'w':
       main_batch = 0;
       break;
-      
+
     default:
       fatal_error(1, "Invalid option: '-%c'.\n", c);
     }
@@ -388,7 +388,7 @@ static void
 sig_int_setup()
 {
   struct sigaction   act;
-  
+
   //  sigemptyset(&act.sa_mask);
   sigfillset(&act.sa_mask);
   act.sa_flags = 0;
@@ -432,7 +432,7 @@ set_stop_alrm(long minutes)
   itime.it_interval.tv_usec = 0;
   itime.it_value.tv_sec  = minutes * 60;
   itime.it_value.tv_usec = 0;
-  
+
   if ( setitimer(ITIMER_VIRTUAL, &itime, NULL) )
     fatal_error(1, "`setitimer' failed.\n");
 }
@@ -455,7 +455,7 @@ sig_alrm_setup()
   itime.it_interval.tv_usec = 0;
   itime.it_value.tv_sec  = 1;
   itime.it_value.tv_usec = 0;
-  
+
   if ( setitimer(ITIMER_REAL, &itime, NULL) )
     fatal_error(1, "`setitimer' failed.\n");
 }
@@ -505,10 +505,10 @@ static void
 write_to_lock_file(char winner, const char* num_nodes)
 {
   FILE* file = NULL;
-  
+
   if( (file = fopen(lock_file, "r+")) == NULL )
     fatal_error(1, "Can't open file.\n");
-  
+
   //  if(lockf(fileno(file), F_LOCK, 0) != 0)
   //  fatal_error(1, "Lock failed.\n");
 
@@ -517,7 +517,7 @@ write_to_lock_file(char winner, const char* num_nodes)
   fseek(file, lock_file_offset, SEEK_SET);
   fprintf(file, "%c %15s", winner, num_nodes);
   fflush(file);
-  
+
   //  lockf(fileno(file), F_ULOCK, 0);
   fclose(file);
 }
@@ -527,7 +527,7 @@ static void
 get_solve_command_from_lock_file()
 {
   FILE* file = NULL;
-  
+
   char*   line      = NULL;
   size_t  line_size = 0;
   int line_pos;
@@ -540,52 +540,52 @@ get_solve_command_from_lock_file()
   char player = 0;
 
   s32bit r, c;
-  
+
   if( (file = fopen(lock_file, "r+")) == NULL )
     fatal_error(1, "Can't open file.\n");
-  
+
   // if(lockf(fileno(file), F_LOCK, 0) != 0)
   //   fatal_error(1, "Lock failed.\n");
 
   printf("%s\n", lock_file);
-  
+
   while( lock_file_offset = ftell(file),
          (len = getline(&line, &line_size, file)) != -1){
     // if line has a length of 0 line[0] will be '\0'.
     if(line[0] != 'A') continue;
 
     printf("%s", line);
-    
+
     if(len <= 18) fatal_error(1, "%s", line);
-    
+
     if(sscanf(line + 18, "(%d,%d)", &num_rows, &num_cols) != 2)
       fatal_error(1, "Invalid row and columns.\n%s\n", line);
-    
+
     if(num_rows > 30)
       fatal_error(1, "Too many rows: %u > 30.\n", num_rows);
     if(num_cols > 30)
       fatal_error(1, "Too many cols: %u > 30.\n", num_cols);
     if(num_cols * num_rows > 128)
       fatal_error(1, "Search space too large: %u > 256.\n", num_cols*num_rows);
-    
+
     for(r = 0; r < 30; r++)
       for(c = 0; c < 30; c++) board[r][c] = 0;
-    
+
     line_pos = 18;
-    
+
     while(1){
       s32bit ignore;
-      
+
       line_pos = next_valid_pos(line, line_pos);
-      
+
       if(line_pos >= len) break;
-      
+
       if(sscanf(line + line_pos, ":%c:%d(%d,%d)", &player,
                 &ignore, &r, &c) != 4)
         break;
-      
+
       printf("%c %d %d\n", player, r, c);
-      
+
       if(player == 'V'){
         if(board[c][r] == 1 ||  board[c+1][r] == 1)
           fatal_error(1, "%s", line);
@@ -596,7 +596,7 @@ get_solve_command_from_lock_file()
         board[r][c] = board[r][c+1] = 1;
       } else fatal_error(1, "Invalid player.\n");
     }
-    
+
     // everything should be initialized properly at this point.
     printf("Starting\n");
     fflush(stdout);
@@ -604,17 +604,17 @@ get_solve_command_from_lock_file()
   }
 
   if(len == -1) fatal_error(1, "No valid command given.\n");
-  
+
   fseek(file, lock_file_offset, SEEK_SET);
   fprintf(file, "W");
   fflush(file);
-  
+
   if(player == 'V') main_whos_turn = 'H';
   else if(player == 'H') main_whos_turn = 'V';
   else  fatal_error(1, "Invalid player.\n");
 
   initialize_board(num_rows, num_cols, board);
-  
+
   free(line);
 
   //  lockf(fileno(file), F_ULOCK, 0);
