@@ -4,19 +4,17 @@
 
 #include "utils.h"
 
-#include "interface.h"
-
 #include "structs.h"
 #include "consts.h"
-
+#include "board.h"
 
 //########################################################
 // Function prototypes.
 //########################################################
 
 // Need to define this in a better place...
-s32bit does_next_player_win(s32bit next_player, s32bit print);
-s32bit does_who_just_moved_win(s32bit who_just_moved, s32bit print);
+s32bit does_next_player_win(Board* board, s32bit next_player, s32bit print);
+s32bit does_who_just_moved_win(Board* board, s32bit who_just_moved, s32bit print);
 
 //=================================================================
 // Move ordering uses a simple evaluation function as well as
@@ -33,17 +31,11 @@ void    set_position_values ();
 #endif
 
 //========================================================
-// Toggle a move, if a move hasn't been played then play it, if
-//   it has then undo it.
-//========================================================
-void    toggle_move    (Move move, s32bit player);
-
-//========================================================
 // Give score of move relative to current position.
 //========================================================
 //s32bit  score_move(Move move, s32bit player);
 void
-score_and_get_first(Move movelist[MAXMOVES], s32bit num_moves,
+score_and_get_first(Board* board, Move movelist[MAXMOVES], s32bit num_moves,
                     s32bit player, Move first);
 
 //========================================================
@@ -109,7 +101,7 @@ void    check_hash_code_sanity();
 // Functions which print various pieces of information in a
 //   readable format.
 //========================================================
-void    print_board(s32bit player);
+void    print_board(const Board& board);
 void    print_board_info(s32bit player);
 void    print_bitboard(s32bit player);
 void    print_hashkey(Hash_Key key);
@@ -126,15 +118,15 @@ extern u64bit       g_num_nodes;
 
 
 // two bitboard arrays [0] is horizontals, [1] is verticals.
-extern u32bit       g_board[2][32];
+//extern u32bit       g_board[2][32];
+extern Board* g_boardx[2]; 
 
 // number of rows and cols in the board.
 // [0] is the num of rows, [1] is the num of cols.
 extern s32bit       g_board_size[2];
 
+
 // keep track of simple info such as real and safe moves.
-extern Basic_Info   g_info[2][32];
-extern Basic_Info   g_info_totals[2];
 extern s32bit       g_empty_squares;
 
 // zobrist value for each position on the board.

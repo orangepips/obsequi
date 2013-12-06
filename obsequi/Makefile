@@ -3,7 +3,7 @@ CFLAGS=
 CPPFLAGS= `./cppflags`
 
 EXE= Obsequi
-OBJS= obsequi.o utils.o \
+OBJS= obsequi.o utils.o board.o \
       negamax.o position_values.o \
       toggle_move.o move-gen.o move_sort.o hash.o \
       display.o \

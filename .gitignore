@@ -4,5 +4,6 @@
 *.D
 .depend
 cppflags.h
+tags
 Obsequi
 a.out

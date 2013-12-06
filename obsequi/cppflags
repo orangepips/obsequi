@@ -4,6 +4,7 @@ OPT = []
 
 # Get c99 and gnu extensions.
 #OPT += ["-std=gnu99 -D_GNU_SOURCE"]
+#OPT += ["-std=c++0x"]
 
 # Lots of warnings and make them all errors.
 OPT += ["-Wall -Werror"]
@@ -15,6 +16,9 @@ OPT += ["-Wall -Werror"]
 
 # Only the best optimization for this machine.
 OPT += ["-O3 -march=native"]
+
+# Create better debug symbols.
+OPT += ["-g -rdynamic"]
 
 # Number of bits used in the zobrist codes.
 # Size of the hashtable will be (1 << HASHCODEBITS). 

@@ -14,16 +14,17 @@
 // This function generates all the moves in one pass.
 //=================================================================
 int
-move_generator(int rows, u32bit board[], Move movelist[]) {
+move_generator(const Board& board, Move movelist[]) {
   int count = 0;
+  const u32bit* rows = board.board;
 
-  for (int i = 0; i < rows; i++) {
-    u32bit curr_row = board[i+1];
+  for (int i = 0; i < board.GetNumRows(); i++) {
+    u32bit curr_row = rows[i+1];
 
 #ifndef PLAY_SAFE_MOVES
     // m contains a 1 at each position where there is valid move.
     // (except safe moves, since there is no need to play them)
-    u32bit prot_rows = board[i] & board[i+2];
+    u32bit prot_rows = rows[i] & rows[i+2];
     u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows&(prot_rows>>1)));
 #else
     u32bit m = ~(curr_row|(curr_row>>1));
@@ -49,17 +50,18 @@ move_generator(int rows, u32bit board[], Move movelist[]) {
 //   moves.
 //=================================================================
 int
-move_generator_stage1(int rows, u32bit board[], Move movelist[]) {
+move_generator_stage1(const Board& board, Move movelist[]) {
   int count = 0;
+  const u32bit* rows = board.board;
 
-  for(int i = 0; i < rows; i++){
-    u32bit curr_row = board[i+1];
-    u32bit prot_rows = board[i] & board[i+2];
-    
+  for(int i = 0; i < board.GetNumRows(); i++){
+    u32bit curr_row = rows[i+1];
+    u32bit prot_rows = rows[i] & rows[i+2];
+ 
     // m will contain a 1 at each position that there is a move
     // which is a vulnerable move with no protected squares.
     u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1)));
-    
+ 
     while(m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
@@ -74,14 +76,14 @@ move_generator_stage1(int rows, u32bit board[], Move movelist[]) {
 }
 
 int
-move_generator_stage2(int rows, u32bit board[],
-                      int start, Move movelist[]) {
+move_generator_stage2(const Board& board, int start, Move movelist[]) {
   int count = start;
+  const u32bit* rows = board.board;
 
-  for(int i = 0; i < rows; i++){
-    u32bit curr_row = board[i+1];
-    u32bit prot_rows = board[i] & board[i+2];
-    
+  for(int i = 0; i < board.GetNumRows(); i++){
+    u32bit curr_row = rows[i+1];
+    u32bit prot_rows = rows[i] & rows[i+2];
+
 #ifndef PLAY_SAFE_MOVES
     // m will contain a 1 at each position that there is a move
     //   which is a vulnerable move with a protected squares.
@@ -92,7 +94,7 @@ move_generator_stage2(int rows, u32bit board[],
     u32bit m = ((~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1))))
          ^ (~(curr_row|(curr_row>>1))));
 #endif
-    
+
     while(m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.

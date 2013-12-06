@@ -41,9 +41,10 @@ check_hashkey_bit_not_set(Hash_Key key, s32bit index)
 static void
 check_hashkey_code(Hash_Key key)
 {
-  s32bit i, j, index, n_rows, n_cols, code;
+  s32bit i, j, index, code;
   
-  n_rows = g_board_size[HORIZONTAL], n_cols = g_board_size[VERTICAL];
+  int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
+  int n_cols = g_boardx[VERTICAL]->GetNumRows();
 
   code = key.code;
   
@@ -68,13 +69,14 @@ check_hashkey_code(Hash_Key key)
 extern void
 check_hash_code_sanity()
 {
-  s32bit i, j, index, n_rows, n_cols;
+  s32bit i, j, index;
   
-  n_rows = g_board_size[HORIZONTAL], n_cols = g_board_size[VERTICAL];
+  int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
+  int n_cols = g_boardx[VERTICAL]->GetNumRows();
   
   for(i = 0; i < n_rows; i++)
     for(j = 0; j < n_cols; j++)
-      if(g_board[HORIZONTAL][i+1] & NTH_BIT(j+1)) {
+      if(g_boardx[HORIZONTAL]->board[i+1] & NTH_BIT(j+1)) {
 
         index = (i*n_cols)+j;
         check_hashkey_bit_set(g_norm_hashkey, index);
@@ -113,7 +115,8 @@ check_hash_code_sanity()
 // This function compares the Horizontal board info to 
 //  the vertical board info.
 //========================================================
-extern void
+/*
+  extern void
 check_board_sanity()
 {
   s32bit i, j;
@@ -136,6 +139,7 @@ check_board_sanity()
       }
     }
 }
+*/
 
 //========================================================
 // Check the board info which we have to make sure that it
@@ -167,69 +171,9 @@ print_hashentry(s32bit index)
          entry.value, entry.type, entry.best_move);
 }
 
-
-extern void
-print_board(s32bit player)
-{
-  s32bit player_index;
-  s32bit row, col, i, j;
-  
-  player_index = player&PLAYER_MASK;
-  
-  row = g_board_size[player_index];
-  col = g_board_size[player_index^PLAYER_MASK];
-  
-  for(i = 0; i < row; i++){
-    for(j = 0; j < col; j++){
-      if(g_board[player_index][i+1] & NTH_BIT(j+1))
-        printf(" #");
-      else
-        printf(" 0");
-    }
-    printf("\n");
-  }
-}
-
-extern void
-print_board_info(s32bit player)
-{
-  s32bit  num_rows, num_cols, max_dim, i;
-  char    str[32][80], null_str[1] = "";
-
-  num_rows = g_board_size[HORIZONTAL];
-  num_cols = g_board_size[VERTICAL];
-  max_dim = MAX_TWO(num_rows, num_cols);
-    
-  sprintf(str[1], "Number of rows    = %d", g_board_size[HORIZONTAL]);
-  sprintf(str[2], "Number of columns = %d", g_board_size[VERTICAL]);
-  
-  printf("%7s %15s %15s\n",
-         null_str, "Vertical", "Horizontal");
-  printf("%7s %7s %7s %7s %7s\n",
-         null_str, "Real", "Safe", "Real", "Safe");
-
-  for(i = 0; i < max_dim; i++){
-    printf("%6d) %7d %7d %7d %7d  %s\n", i + 1,
-           g_info[VERTICAL][i+1].real, g_info[VERTICAL][i+1].safe,
-           g_info[HORIZONTAL][i+1].real, g_info[HORIZONTAL][i+1].safe,
-           (i < 2) ? str[i+1] : null_str);
-  }
-
-  printf("Totals: %7d %7d %7d %7d\n",
-         g_info_totals[VERTICAL].real, g_info_totals[VERTICAL].safe,
-         g_info_totals[HORIZONTAL].real, g_info_totals[HORIZONTAL].safe);
-}
-
 extern void
 print_bitboard(s32bit player)
 {
-  s32bit player_index;
-  s32bit i;
-    
-  player_index = player&PLAYER_MASK;
-  
-  for(i = 0; i < g_board_size[player_index] + 2; i++)
-    printf("%X\n", g_board[player_index][i]);
 }
 
 extern void
@@ -303,6 +247,7 @@ print_external()
 
 extern s32bit g_print;
 
+/*
 extern void
 print_current_state()
 {
@@ -311,6 +256,7 @@ print_current_state()
   print_board_info(HORIZONTAL);
   g_print = 0;
 }
+*/
 
 
 extern const char*

@@ -124,28 +124,29 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   if(toupper(dir) == 'V')      whos_turn = VERTICAL;
   else if(toupper(dir) == 'H') whos_turn = HORIZONTAL;
   else { fatal_error(1, "Invalid player.\n"); exit(1); }
-  
+
+  Board* curr = g_boardx[whos_turn];
+  Board* opp = curr->GetOpponent();
+
   // initialize the number of empty squares.
   g_empty_squares = 0;
-  for(i = 0; i < g_board_size[0]; i++)
-    g_empty_squares += countbits32( (~g_board[0][i+1]) );
+  for(i = 0; i < curr->GetNumRows(); i++)
+    g_empty_squares += countbits32( ~(curr->board[i+1]) );
   
   // zero out all the statistics variables.
   init_stats();
   
   // Can we already determine a winner?
   {
-    s32bit opponent = whos_turn ^ PLAYER_MASK;
-    
     // stop search if game over.
-    if(g_info_totals[whos_turn].safe > g_info_totals[opponent].real){
+    if(curr->info_totals.safe > opp->info_totals.real){
       // current player wins.
       *col = *row = -1;
       *nodes = 0;
       return 5000;
     }
     
-    if(g_info_totals[opponent].safe >= g_info_totals[whos_turn].real){
+    if(opp->info_totals.safe >= curr->info_totals.real){
       // opponent wins.
       *col = *row = -1;
       *nodes = 0;
@@ -154,17 +155,14 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   }
   
   // generate all possible moves for current player given current position.
-  num_moves = move_generator(
-      g_board_size[whos_turn & PLAYER_MASK],
-      g_board[whos_turn & PLAYER_MASK],
-      movelist);
+  num_moves = move_generator(*curr, movelist);
 
   // This should never happen.
   CHECK(num_moves, "No moves.");
 
   // should possibly sort the whole list instead of just get first.
   forcefirst.array_index = -1;
-  score_and_get_first(movelist, num_moves, whos_turn, forcefirst);
+  score_and_get_first(curr, movelist, num_moves, whos_turn, forcefirst);
   sort_moves(movelist, 1, num_moves);
 
   // Really this is for iterative deepening.
@@ -197,7 +195,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 #endif
       
       g_empty_squares -= 2;
-      toggle_move(movelist[i], whos_turn);
+      curr->ToggleMove(movelist[i]);
       toggle_hash_code
     (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
       check_hash_code_sanity();
@@ -209,7 +207,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 #endif
 
       g_empty_squares += 2;
-      toggle_move(movelist[i], whos_turn);
+      curr->ToggleMove(movelist[i]);
       toggle_hash_code
     (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
       check_hash_code_sanity();
@@ -325,6 +323,9 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   s32bit who_wins_value;
 
   s32bit stage = 0, state = 0, true_count, i = 0, num_moves = 1;
+  
+  Board* curr = g_boardx[whos_turn];
+  Board* opp = curr->GetOpponent();
 
 #ifdef DYNAMIC_POSITION_VALUES
   s32bit dyn_set;
@@ -338,13 +339,13 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
   // if no depth remaining stop search.
   if( depth_remaining <= 0 ){
-    s32bit a = does_next_player_win(whos_turn, 0);
+    s32bit a = does_next_player_win(curr, whos_turn, 0);
     if (a > 0) {
       // current player wins.
       return 5000;
     }
 
-    s32bit b = does_who_just_moved_win(opponent, 0);
+    s32bit b = does_who_just_moved_win(opp, opponent, 0);
     if(b >= 0) {
       // opponent wins.
       return -5000;
@@ -359,7 +360,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   //------------------------------------------
 
   // does current player win
-  if(g_info_totals[whos_turn].safe > g_info_totals[opponent].real){
+  if(curr->info_totals.safe > opp->info_totals.real){
 #ifdef COLLECT_STATS
     cut1++;
 #endif
@@ -367,7 +368,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   }
   
   // does opponent win
-  if(g_info_totals[opponent].safe >= g_info_totals[whos_turn].real){
+  if(opp->info_totals.safe >= curr->info_totals.real){
 #ifdef COLLECT_STATS
     cut2++;
 #endif
@@ -392,11 +393,11 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   //------------------------------------------
 
   // does current player win
-  if( (who_wins_value = does_next_player_win(whos_turn, 0)) > 0 ) {
+  if( (who_wins_value = does_next_player_win(curr, whos_turn, 0)) > 0 ) {
 
 #ifdef DEBUG_NEGAMAX
     if(random() % 1000000 == -1){
-      does_next_player_win(whos_turn, 1);
+      does_next_player_win(curr, whos_turn, 1);
       print_board(whos_turn);
     }
 #endif
@@ -408,11 +409,11 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   }
     
   // does opponent win
-  if( (who_wins_value = does_who_just_moved_win(opponent, 0)) >= 0 ) {
+  if( (who_wins_value = does_who_just_moved_win(opp, opponent, 0)) >= 0 ) {
 
 #ifdef DEBUG_NEGAMAX
     if(who_wins_value < 3){ // && random() % 500 == -1){
-      does_who_just_moved_win(opponent, 1);
+      does_who_just_moved_win(opp, opponent, 1);
       //  print_board(opponent);
     }
 #endif  
@@ -443,29 +444,20 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   num_moves = 1;
 
 #ifdef TWO_STAGE_GENERATION
-  true_count = move_generator_stage1(
-      g_board_size[whos_turn & PLAYER_MASK],
-      g_board[whos_turn & PLAYER_MASK],
-      movelist);
+  true_count = move_generator_stage1(*curr, movelist);
   if(true_count == 0){
-    true_count = move_generator_stage2(
-        g_board_size[whos_turn & PLAYER_MASK],
-        g_board[whos_turn & PLAYER_MASK],
-        0, movelist);
+    true_count = move_generator_stage2(*curr, 0, movelist);
     stage = 1;
     if(true_count == 0) fatal_error(1, "Should always have a move.\n");
   }
 #else
-  true_count = move_generator(
-      g_board_size[whos_turn & PLAYER_MASK],
-      g_board[whos_turn & PLAYER_MASK],
-      movelist);
+  true_count = move_generator(*curr, movelist);
   stage = 1;
   if(true_count == 0)   fatal_error(1, "Should always have a move.\n");
 #endif
   
   // score all the moves and move the best to the front.
-  score_and_get_first(movelist, true_count, whos_turn, forcefirst);
+  score_and_get_first(curr, movelist, true_count, whos_turn, forcefirst);
   
   best = movelist[0];
   
@@ -479,10 +471,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       if(stage == 0) state = 2;
       else           state = 3;
     } else { // state 2 - generate the second set of moves and play them.
-      num_moves = move_generator_stage2(
-          g_board_size[whos_turn & PLAYER_MASK],
-          g_board[whos_turn & PLAYER_MASK],
-          num_moves, movelist);
+      num_moves = move_generator_stage2(*curr, num_moves, movelist);
       state = 3;
     }
     
@@ -498,7 +487,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
       // make move.
       g_empty_squares -= 2;
-      toggle_move(movelist[i], whos_turn);
+      curr->ToggleMove(movelist[i]);
       toggle_hash_code
     (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
 #ifdef DYNAMIC_POSITION_VALUES
@@ -511,7 +500,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       
       // undo move.
       g_empty_squares += 2;
-      toggle_move(movelist[i], whos_turn);
+      curr->ToggleMove(movelist[i]);
       toggle_hash_code
     (g_keyinfo[whos_turn][movelist[i].array_index][movelist[i].mask_index]);
 #ifdef DYNAMIC_POSITION_VALUES

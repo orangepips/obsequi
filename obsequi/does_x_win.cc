@@ -310,9 +310,9 @@ pack_safe(int num_rows, u32bit board[32], u32bit tmp_board[32],
 //#################################################################
 extern s32bit
 #ifdef PRINT_DOES_X_WIN_INFO
-does_next_player_win(s32bit next_player, s32bit print)
+does_next_player_win(Board* boardx, s32bit next_player, s32bit print)
 #else
-does_next_player_win(s32bit next_player)
+does_next_player_win(Board* boardx, s32bit next_player)
 #endif
 {
   // info we directly get from the board.
@@ -335,8 +335,8 @@ does_next_player_win(s32bit next_player)
   s32bit r_value = 0, i;
 
   // temporary board to store which positions have already been packed.
-  int num_rows = g_board_size[next_player];
-  u32bit* board = g_board[next_player];
+  int num_rows = boardx->GetNumRows();
+  u32bit* board = boardx->board;
 
   // temporary board to store which positions have already been packed.
   u32bit tmp_board[32];
@@ -351,7 +351,7 @@ does_next_player_win(s32bit next_player)
   // Initialize all of the values.
   //========================================================  
   for(i = 0; i < 32; i++) tmp_board[i] = 0;
-  safe  = g_info_totals[next_player].safe;
+  safe  = boardx->info_totals.safe;
   empty = g_empty_squares;
   
   // Determine the number of protective regions that we have.
@@ -494,9 +494,9 @@ does_next_player_win(s32bit next_player)
 //#################################################################
 extern s32bit
 #ifdef PRINT_DOES_X_WIN_INFO
-does_who_just_moved_win(s32bit who_just_moved, s32bit print)
+does_who_just_moved_win(Board* boardx, s32bit who_just_moved, s32bit print)
 #else
-does_who_just_moved_win(s32bit who_just_moved)
+does_who_just_moved_win(Board* boardx, s32bit who_just_moved)
 #endif
 {
   // info we directly get from the board.
@@ -518,8 +518,8 @@ does_who_just_moved_win(s32bit who_just_moved)
   // value we return and other variables.
   s32bit r_value = 0;
 
-  int num_rows = g_board_size[who_just_moved];
-  u32bit* board = g_board[who_just_moved];
+  int num_rows = boardx->GetNumRows();
+  u32bit* board = boardx->board;
 
   // temporary board to store which positions have already been packed.
   u32bit tmp_board[32];
@@ -532,7 +532,7 @@ does_who_just_moved_win(s32bit who_just_moved)
   //========================================================  
   // Initialize all of the values.
   //========================================================  
-  safe  = g_info_totals[who_just_moved].safe;
+  safe  = boardx->info_totals.safe;
   empty = g_empty_squares;
   
   // Determine the number of protective regions that we have.
