@@ -96,7 +96,6 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 {
   s32bit  d, i, value = 0;
   s32bit  whos_turn;
-  Move    forcefirst;
 
   // Set who's turn it is.
   if(toupper(dir) == 'V')      whos_turn = VERTICAL;
@@ -117,16 +116,8 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     return rv;
   }
 
-  // generate all possible moves for current player given current position.
-  int num_moves;
-  Move movelist[MAXMOVES];
-  num_moves = move_generator(*curr, movelist);
-  CHECK(num_moves, "No moves.");
-
-  // should possibly sort the whole list instead of just get first.
-  forcefirst.array_index = -1;
-  score_and_get_first(curr, movelist, num_moves, forcefirst);
-  sort_moves(movelist, 1, num_moves);
+  MoveList movelist;
+  movelist.GenerateAllMoves(curr);
 
   // Really this is for iterative deepening.
   for(d = 1; d < 50; d += 44){
@@ -142,8 +133,8 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     g_starting_depth = d;
 
     // iterate through all the possible moves.
-    for(i = 0; i < num_moves; i++){
-
+    for(i = 0; i < movelist.length(); i++){
+      const Move& move = movelist[i];
       //set_position_values();
 
       //curr->position->Print();
@@ -152,27 +143,27 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       g_move_number[0] = i;
 #ifdef RECORD_MOVES
       g_move_player[0] = whos_turn;
-      g_move_position[0] = movelist[i];
+      g_move_position[0] = move;
 #endif
 
       g_empty_squares -= 2;
-      curr->ToggleMove(movelist[i]);
-      toggle_hash_code(whos_turn, movelist[i]);
+      curr->ToggleMove(move);
+      toggle_hash_code(whos_turn, move);
       check_hash_code_sanity();
 
       value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
 
       g_empty_squares += 2;
-      curr->ToggleMove(movelist[i]);
-      toggle_hash_code(whos_turn, movelist[i]);
+      curr->ToggleMove(move);
+      toggle_hash_code(whos_turn, move);
       check_hash_code_sanity();
 
       printf("Move (%d,%d), value %d: %s.\n",
-             movelist[i].array_index, movelist[i].mask_index,
+             move.array_index, move.mask_index,
              value, u64bit_to_string(g_num_nodes));
       printf("alpha %d, beta %d.\n", alpha, beta);
 
-      movelist[i].info = value;
+      //move.info = value;
 
       if(value >= beta){
         alpha = value;
@@ -203,6 +194,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     }
 
     // remove lossing moves from movelist.
+    /*  iterative deepening...
     {
       s32bit rem = 0;
       for(i = 0; i < num_moves; i++){
@@ -210,24 +202,19 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
         else if(rem > 0) movelist[i-rem] = movelist[i];
       }
       num_moves -= rem;
-      /*
-      for(i = 0; i < num_moves; i++){
-        printf("(%d,%d): %d.\n",
-               movelist[i].array_index, movelist[i].mask_index,
-               movelist[i].info);
-      }
-      */
     }
+    */
 
     print_stats();
 
-    if(num_moves == 0){
-      break;
-    }
+    //if(num_moves == 0){
+    //  break;
+    //}
 
+    // Iterative deepening
     //std::stable_sort(movelist, movelist+num_moves, wayToSort);
     //std::__inplace_stable_sort(movelist, movelist+num_moves, wayToSort);
-    sort_moves(movelist, 0, num_moves);
+    //sort_moves(movelist, 0, num_moves);
 
     printf("The value is %d at a depth of %d.\n", value, d);
     printf("Nodes: %u.\n", (u32bit)g_num_nodes);
@@ -246,14 +233,11 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 static s32bit
 negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 {
-  Move   movelist[MAXMOVES], best;
   s32bit whos_turn = whos_turn_t & PLAYER_MASK;
   s32bit value;
   s32bit init_alpha = alpha, init_beta = beta;
   u32bit start_nodes = g_num_nodes;
   Move   forcefirst;
-
-  s32bit stage = 0, state = 0, true_count, i = 0, num_moves = 1;
 
   Board* curr = g_boardx[whos_turn];
 
@@ -306,48 +290,14 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 */
   }
 
-  //------------------------------------------
-  // Generate child nodes and examine them.
-  //------------------------------------------
+  int i = 0;
+  MoveList movelist;
+  movelist.GenerateNextMoves(curr, forcefirst);
+  Move best = movelist[0];
 
-  // initialize a few variables. (some of them don't really need to be.)
-  stage = state = true_count = i = 0;
-  num_moves = 1;
-
-#ifdef TWO_STAGE_GENERATION
-  true_count = move_generator_stage1(*curr, movelist);
-  if(true_count == 0){
-    true_count = move_generator_stage2(*curr, 0, movelist);
-    stage = 1;
-    if(true_count == 0) fatal_error(1, "Should always have a move.\n");
-  }
-#else
-  true_count = move_generator(*curr, movelist);
-  stage = 1;
-  if(true_count == 0)   fatal_error(1, "Should always have a move.\n");
-#endif
-
-  // score all the moves and move the best to the front.
-  score_and_get_first(curr, movelist, true_count, forcefirst);
-
-  best = movelist[0];
-
-  // need to sort moves and generate more moves in certain situations.
-  while(state < 3){
-    if(state == 0) {  // state 0 - play first move.
-      state = 1;
-    } else if(state == 1){  // state 1 - sort the moves and play the rest.
-      sort_moves(movelist, 1, true_count);
-      num_moves = true_count;
-      if(stage == 0) state = 2;
-      else           state = 3;
-    } else { // state 2 - generate the second set of moves and play them.
-      num_moves = move_generator_stage2(*curr, num_moves, movelist);
-      state = 3;
-    }
-
+  do {
     // Iterate through all the moves.
-    for(; i < num_moves; i++){
+    for(; i < movelist.length(); i++){
 
       // A few statistics
       g_move_number[g_starting_depth - depth_remaining] = i;
@@ -386,11 +336,11 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
         best  = movelist[i];
       }
     }
-
     // If we have broken out of previous FOR loop make sure we break out
     //   of this loop as well.
     if(value >= beta) break;
-  }
+
+  } while(movelist.GenerateNextMoves(curr, forcefirst));
 
   // save the position in the hashtable
   hashstore(alpha, init_alpha, init_beta, (g_num_nodes - start_nodes) >> 5,

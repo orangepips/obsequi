@@ -17,7 +17,6 @@ typedef  uint8_t   u8bit;
 typedef  uint16_t  u16bit;
 typedef  uint32_t  u32bit;
 typedef  uint64_t  u64bit;
-typedef  __uint128_t  u128bit;
 
 typedef  int16_t    s16bit;
 typedef  int32_t    s32bit;
@@ -67,7 +66,7 @@ typedef  int32_t    s32bit;
 //########################################################
 
 #define CHECK(v, msg) \
-    if ((!v)) fatal_error(1, (msg))
+    if (!(v)) fatal_error(1, (msg))
 
 //========================================================
 // Besides printing a message this function also causes the
