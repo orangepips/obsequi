@@ -5,7 +5,7 @@ CPPFLAGS= `./cppflags`
 EXE= Obsequi
 OBJS= obsequi.o utils.o board.o \
       negamax.o positional-values.o \
-      move.o hash-table.o \
+      move.o hash-table.o stats.o \
       lastbit.o countmoves.o \
       score-board.o
 

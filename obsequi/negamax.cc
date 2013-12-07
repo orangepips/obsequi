@@ -4,79 +4,29 @@
 #include "positional-values.h"
 #include "hash-table.h"
 #include "countbits.h"
+#include "stats.h"
 
 #include <time.h>
 #include <ctype.h>
 #include <algorithm>
 
-//#define RECORD_MOVES
 //#define DEBUG_NEGAMAX
-
-//=================================================================
-// Variables used for statistics gathering.
-//=================================================================
-static s32bit cut1 = 0, cut2 = 0, cut3 = 0, cut4 = 0;
-static s32bit stat_cutoffs[40];
-static s32bit stat_nodes[40];
-static s32bit stat_nth_try[40][10];
-
-//#################################################################
-// Other variables.
-//#################################################################
-s32bit         g_empty_squares = 0;
-
-// Stats
-u64bit         g_num_nodes;
-s32bit         g_move_number[128];
-static s32bit g_starting_depth;
-
-#ifdef RECORD_MOVES
-static s32bit  g_move_player[128];
-static Move    g_move_position[128];
-#endif
 
 Board* g_boardx[2];
 s32bit g_board_size[2] = {-1,-1};
+s32bit g_empty_squares = 0;
+s32bit g_starting_depth;
+ObsequiStats g_stats;
 
+extern void
+current_search_state()
+{
+  g_stats.PrintSearchState();
+}
 
 //=================================================================
 // Print the statistics which we have gathered.
 //=================================================================
-static void
-print_stats()
-{
-  s32bit i, j;
-
-  printf("%d %d %d %d.\n\n", cut1, cut2, cut3, cut4);
-
-  for(i = 0; i < 40; i++){
-    if(stat_cutoffs[i] != 0 || stat_nodes[i] != 0){
-      printf("cutoffs depth %d: (%d) %d -",
-             i, stat_nodes[i], stat_cutoffs[i]);
-      for(j = 0; j < 5; j++)
-        printf(" %d", stat_nth_try[i][j]);
-      printf(" >%d.\n", stat_nth_try[i][5]);
-    }
-  }
-}
-
-//=================================================================
-// Initialize the statistical variables.
-//=================================================================
-static void
-init_stats()
-{
-  s32bit i, j;
-
-  // zero all data.
-  for(i = 0; i < 40; i++){
-    for(j = 0; j < 6; j++)
-      stat_nth_try[i][j] = 0;
-    stat_cutoffs[i] = 0;
-    stat_nodes[i] = 0;
-  }
-}
-
 extern void
 initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
 {
@@ -105,32 +55,12 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   init_hashtable(num_rows, num_cols, board);
 }
 
-extern const char*
-current_search_state()
-{
-  static char* str = NULL;
-
-  if(str != NULL) free(str);
-
-  int x = asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d %d %d %d.",
-                   u64bit_to_string(g_num_nodes),
-                   g_move_number[0], g_move_number[1], g_move_number[2],
-                   g_move_number[3], g_move_number[4], g_move_number[5],
-                   g_move_number[6], g_move_number[7], g_move_number[8],
-                   g_move_number[9], g_move_number[10], g_move_number[11]);
-  if (x == -1) exit(3);
-
-  return str;
-}
-
 
 //#################################################################
 // Negamax and driver functions. (and function prototype).
 //#################################################################
 static s32bit
 negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta);
-
-bool wayToSort(Move i, Move j) { return i.info > j.info; }
 
 //=================================================================
 // Search for move function. (Negamax Driver)
@@ -170,8 +100,8 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     s32bit alpha = -5000, beta = 5000;
 
     // Re-initialize the statistics for each iteration.
-    g_num_nodes = 0;
-    init_stats();
+    g_stats.num_nodes_ = 0;
+    g_stats = ObsequiStats();
 
     // set what the starting max depth is.
     g_starting_depth = d;
@@ -184,11 +114,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       //curr->position->Print();
       //curr->GetOpponent()->position->Print();
 
-      g_move_number[0] = i;
-#ifdef RECORD_MOVES
-      g_move_player[0] = whos_turn;
-      g_move_position[0] = move;
-#endif
+      g_stats.move_number_[0] = i;
 
       g_empty_squares -= 2;
       curr->ToggleMove(move);
@@ -204,7 +130,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
       printf("Move (%d,%d), value %d: %s.\n",
              move.array_index, move.mask_index,
-             value, u64bit_to_string(g_num_nodes));
+             value, u64bit_to_string(g_stats.num_nodes_));
       printf("alpha %d, beta %d.\n", alpha, beta);
 
       move.info = value;
@@ -230,9 +156,9 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
         fatal_error(1, "oops.");
       }
 
-      *nodes = g_num_nodes;
+      *nodes = g_stats.num_nodes_;
 
-      print_stats();
+      g_stats.PrintStats();
 
       return value;
     }
@@ -249,23 +175,21 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     }
     */
 
-    print_stats();
+    g_stats.PrintStats();
 
     //if(num_moves == 0){
     //  break;
     //}
 
     // Iterative deepening
-    //std::stable_sort(movelist, movelist+num_moves, wayToSort);
-    //std::__inplace_stable_sort(movelist, movelist+num_moves, wayToSort);
     //sort_moves(movelist, 0, num_moves);
 
     printf("The value is %d at a depth of %d.\n", value, d);
-    printf("Nodes: %lu.\n", g_num_nodes);
+    printf("Nodes: %lu.\n", g_stats.num_nodes_);
   }
 
   *col = *row = -1;
-  *nodes = g_num_nodes;
+  *nodes = g_stats.num_nodes_;
 
   return value;
 }
@@ -280,14 +204,14 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   s32bit whos_turn = whos_turn_t & PLAYER_MASK;
   s32bit value;
   s32bit init_alpha = alpha, init_beta = beta;
-  u64bit start_nodes = g_num_nodes;
+  u64bit start_nodes = g_stats.num_nodes_;
   Move   forcefirst;
 
   Board* curr = g_boardx[whos_turn];
 
   // increment a couple of stats
-  g_num_nodes++;
-  stat_nodes[g_starting_depth - depth_remaining]++;
+  g_stats.num_nodes_++;
+  g_stats.depth_nodes_[g_starting_depth - depth_remaining]++;
 
   // if no depth remaining stop search.
   if( depth_remaining <= 0 ){
@@ -301,7 +225,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   //------------------------------------------
   int rv;
   if (curr->IsGameOver(&rv)) {
-    cut1++;
+    g_stats.game_over_simple_++;
     return rv;
   }
 
@@ -321,7 +245,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   // Can we determine a winner yet (look harder).
   //------------------------------------------
   if (curr->IsGameOverExpensive(&rv)) {
-    cut3++;
+    g_stats.game_over_expensive_++;
     return rv;
 
 /*
@@ -344,11 +268,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
     for(; i < movelist.length(); i++){
 
       // A few statistics
-      g_move_number[g_starting_depth - depth_remaining] = i;
-#ifdef RECORD_MOVES
-      g_move_player[g_starting_depth - depth_remaining] = whos_turn;
-      g_move_position[g_starting_depth - depth_remaining] = movelist[i];
-#endif
+      g_stats.move_number_[g_starting_depth - depth_remaining] = i;
 
       // make move.
       g_empty_squares -= 2;
@@ -368,9 +288,9 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
         alpha = value;
         best  = movelist[i];
 
-        stat_cutoffs[g_starting_depth - depth_remaining]++;
-        if(i < 5) stat_nth_try[g_starting_depth - depth_remaining][i]++;
-        else stat_nth_try[g_starting_depth - depth_remaining][5]++;
+        g_stats.depth_cutoffs_[g_starting_depth - depth_remaining]++;
+        if(i < 5) g_stats.depth_nth_try_[g_starting_depth - depth_remaining][i]++;
+        else g_stats.depth_nth_try_[g_starting_depth - depth_remaining][5]++;
         
         /*
         int depth = g_starting_depth - depth_remaining;
@@ -380,7 +300,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
           for (int j = 0; j < movelist.length(); j++) {
             printf("Move %d: Row (%d,%d), Score: %d %lu %s\n",
                 j, movelist[j].array_index, movelist[j].mask_index,
-                movelist[j].info, g_num_nodes - start_nodes, (i == j) ? "(*)" : "");
+                movelist[j].info, g_stats.num_nodes_ - start_nodes, (i == j) ? "(*)" : "");
           }
         }
         */
@@ -400,7 +320,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   } while(movelist.GenerateNextMoves(curr, forcefirst));
 
   // save the position in the hashtable
-  hashstore(alpha, init_alpha, init_beta, (g_num_nodes - start_nodes) >> 5,
+  hashstore(alpha, init_alpha, init_beta, (g_stats.num_nodes_ - start_nodes) >> 5,
             depth_remaining, best, whos_turn);
 
   return alpha;

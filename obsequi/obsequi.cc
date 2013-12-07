@@ -375,13 +375,10 @@ decode_switches(int argc, char **argv)
 static void
 sig_int_handler(int sig)
 {
-  const char* str;
+  current_search_state();
 
-  str = current_search_state();
-
-  fprintf(stderr, "%s\n", str);
-
-  fflush(stderr);
+  // fprintf(stderr, "%s\n", str);
+  // fflush(stderr);
 }
 
 static void

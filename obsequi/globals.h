@@ -33,7 +33,7 @@ s32bit search_for_move   (char player,
 // This function returns a string about the current
 //   state of the search.
 //########################################################
-const char*  current_search_state();
+void current_search_state();
 
 
 #endif //ifndef GLOBALS_H

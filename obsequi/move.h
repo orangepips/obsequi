@@ -35,6 +35,11 @@ void score_and_get_first(Board* board, Move movelist[MAXMOVES],
 // Sort moves into a decending order. (Stable sort.)
 void sort_moves(Move movelist[MAXMOVES], int start, int num_moves);
 
+/* Optional sort method.
+bool wayToSort(Move i, Move j) { return i.info > j.info; }
+std::stable_sort(movelist, movelist+num_moves, wayToSort);
+std::__inplace_stable_sort(movelist, movelist+num_moves, wayToSort);
+*/
 
 class MoveList {
  public:
