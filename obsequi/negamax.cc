@@ -134,7 +134,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
     // iterate through all the possible moves.
     for(i = 0; i < movelist.length(); i++){
-      const Move& move = movelist[i];
+      Move& move = movelist[i];
       //set_position_values();
 
       //curr->position->Print();
@@ -163,7 +163,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
              value, u64bit_to_string(g_num_nodes));
       printf("alpha %d, beta %d.\n", alpha, beta);
 
-      //move.info = value;
+      move.info = value;
 
       if(value >= beta){
         alpha = value;
@@ -217,7 +217,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     //sort_moves(movelist, 0, num_moves);
 
     printf("The value is %d at a depth of %d.\n", value, d);
-    printf("Nodes: %u.\n", (u32bit)g_num_nodes);
+    printf("Nodes: %lu.\n", g_num_nodes);
   }
 
   *col = *row = -1;
@@ -236,7 +236,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   s32bit whos_turn = whos_turn_t & PLAYER_MASK;
   s32bit value;
   s32bit init_alpha = alpha, init_beta = beta;
-  u32bit start_nodes = g_num_nodes;
+  u64bit start_nodes = g_num_nodes;
   Move   forcefirst;
 
   Board* curr = g_boardx[whos_turn];
@@ -326,7 +326,20 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
         stat_cutoffs[g_starting_depth - depth_remaining]++;
         if(i < 5) stat_nth_try[g_starting_depth - depth_remaining][i]++;
-        else      stat_nth_try[g_starting_depth - depth_remaining][5]++;
+        else stat_nth_try[g_starting_depth - depth_remaining][5]++;
+        
+        /*
+        int depth = g_starting_depth - depth_remaining;
+        if (i > 0 && depth < 12) {
+          printf("Really Bad First move.\n");
+          curr->Print();
+          for (int j = 0; j < movelist.length(); j++) {
+            printf("Move %d: Row (%d,%d), Score: %d %lu %s\n",
+                j, movelist[j].array_index, movelist[j].mask_index,
+                movelist[j].info, g_num_nodes - start_nodes, (i == j) ? "(*)" : "");
+          }
+        }
+        */
         break;
       }
 

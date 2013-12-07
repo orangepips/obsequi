@@ -6,6 +6,8 @@
 #include "consts.h"
 #include "board.h"
 
+#define TWO_STAGE_GENERATION
+
 struct Move {
   int array_index;
   int mask_index;
@@ -28,7 +30,7 @@ int move_generator_stage2(const Board& board,
 
 // Score all the moves (and move the best to the front of the list).
 void score_and_get_first(Board* board, Move movelist[MAXMOVES], 
-                         int num_moves, Move first);
+                         int num_moves, const Move& first);
 
 // Sort moves into a decending order. (Stable sort.)
 void sort_moves(Move movelist[MAXMOVES], int start, int num_moves);
@@ -54,7 +56,7 @@ class MoveList {
   // Generates moves in stages. (First is a hint of a likely good move.)
   // First call should always return just 1. (Best move).
   // Each subsequent call will generate more until false is returned.
-  bool GenerateNextMoves(Board* board, Move first) {
+  bool GenerateNextMoves(Board* board, const Move& first) {
 #ifdef TWO_STAGE_GENERATION
     if (stage_ == 0) {
       true_length_ = move_generator_stage1(*board, moves_);
@@ -101,7 +103,7 @@ class MoveList {
     return false;
   }
 
-  Move operator[](int index) {
+  Move& operator[](int index) {
     return moves_[index];
   }
     

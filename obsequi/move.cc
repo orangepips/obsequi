@@ -22,13 +22,13 @@ move_generator(const Board& board, Move movelist[]) {
   for (int i = 0; i < board.GetNumRows(); i++) {
     u32bit curr_row = rows[i+1];
 
-#ifndef PLAY_SAFE_MOVES
+#ifdef PLAY_SAFE_MOVES
+    u32bit m = ~(curr_row|(curr_row>>1));
+#else
     // m contains a 1 at each position where there is valid move.
     // (except safe moves, since there is no need to play them)
     u32bit prot_rows = rows[i] & rows[i+2];
     u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows&(prot_rows>>1)));
-#else
-    u32bit m = ~(curr_row|(curr_row>>1));
 #endif
 
     while (m) {
@@ -175,7 +175,7 @@ sort_moves(Move movelist[MAXMOVES], s32bit start, s32bit num_moves)
 //#define DEBUG_SCORE_MOVE
 
 static inline s32bit
-score_move(Board* boardx, Move move)
+score_move(Board* boardx, const Move& move)
 {
   u32bit* board = boardx->board;
   u32bit* opp_board = boardx->GetOpponent()->board;
@@ -190,6 +190,8 @@ score_move(Board* boardx, Move move)
   Board* horz = boardx;
   Board* vert = boardx->GetOpponent();
 
+  int safe_created = 0;
+
   // update real moves
   int score = count_real(board, row) - horz->info[row].real;
 
@@ -198,16 +200,33 @@ score_move(Board* boardx, Move move)
 
   // update safe moves
   if(row - 1 != 0)
-    score += count_safe(board, row - 1) - horz->info[row-1].safe;
+    safe_created += count_safe(board, row - 1) - horz->info[row-1].safe;
   score += count_safe(board, row) - horz->info[row].safe;
   if(row != horz->GetNumRows())
-    score += count_safe(board, row+1) - horz->info[row+1].safe;
+    safe_created += count_safe(board, row+1) - horz->info[row+1].safe;
 
   if(col - 1 != 0)
     score -= count_safe(opp_board, col - 1) - vert->info[col-1].safe;
   if(col + 1 != vert->GetNumRows())
     score -= count_safe(opp_board, col + 2) - vert->info[col+2].safe;
 
+  score += safe_created;
+  /* The following does seem to slightly improve move ordering.
+  if (safe_created > 0) {  // Creating safe moves is really good.
+    score += 2;
+  } else {
+    u32bit mask = (3 << col);
+    if (((mask & board[row+1]) == mask && (mask & ~board[row-1]) == mask) ||
+        ((mask & board[row-1]) == mask && (mask & ~board[row+1]) == mask)) {
+      // Playing in a position where a safe move could have been created is
+      // just silly.
+      score -= 20;
+    }
+  }
+  */
+
+  // Reset the board to how we found it.
+  // Sadly this makes it so we can't declare the 'boardx' arg as a const.
   board[row]   ^= (3<<col);
   opp_board[col]   ^= (1<<row);
   opp_board[col+1] ^= (1<<row);
@@ -220,7 +239,7 @@ score_move(Board* boardx, Move move)
 
 extern void
 score_and_get_first(Board* board, Move movelist[MAXMOVES], s32bit num_moves,
-                    Move first)
+                    const Move& first)
 {
   s32bit i, max = -50000, max_index = -1;
 
