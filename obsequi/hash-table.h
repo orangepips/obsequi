@@ -12,7 +12,7 @@ void toggle_hash_code(int whos_turn, const Move& move);
 
 void hashstore(s32bit value, s32bit alpha, s32bit beta,
                u32bit nodes, s32bit depth_remaining,
-               Move best, s32bit player);
+               const Move& best, s32bit player);
 
 int hashlookup(s32bit *value, s32bit *alpha, s32bit *beta,
                s32bit depth_remaining,

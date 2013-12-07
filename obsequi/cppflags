@@ -24,9 +24,6 @@ OPT += ["-g -rdynamic"]
 # Size of the hashtable will be (1 << HASHCODEBITS).
 OPT += ["-DHASHCODEBITS=24"]
 
-# Two stage move generation.
-OPT += ["-DTWO_STAGE_GENERATION"]
-
 #assume the board size is less than 16 rows or columns
 #OPT:-DBOARD_SIZE_LT_16
 

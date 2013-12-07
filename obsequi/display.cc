@@ -76,11 +76,12 @@ current_search_state()
 
   if(str != NULL) free(str);
 
-  int x = asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d.",
+  int x = asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d %d %d %d.",
                    u64bit_to_string(g_num_nodes),
-                   g_move_number[1], g_move_number[2], g_move_number[3],
-                   g_move_number[4], g_move_number[5], g_move_number[6],
-                   g_move_number[7], g_move_number[8], g_move_number[9]);
+                   g_move_number[0], g_move_number[1], g_move_number[2],
+                   g_move_number[3], g_move_number[4], g_move_number[5],
+                   g_move_number[6], g_move_number[7], g_move_number[8],
+                   g_move_number[9], g_move_number[10], g_move_number[11]);
   if (x == -1) exit(3);
 
   return str;

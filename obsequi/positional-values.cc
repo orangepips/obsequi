@@ -1,5 +1,7 @@
 #include "positional-values.h"
 
+#include <stdlib.h>
+
 //=================================================================
 // Set the value of all the positions on the board.
 //  We only do this once at the start of the search.
@@ -58,14 +60,14 @@ void PositionalValues::SetValue(int num_rows, int num_cols,
 }
 
 void PositionalValues::Print() const {
-    for(int j = 0; j < 32; j++){
-      for(int k = 0; k < 32; k++){
-        printf("%d ", positional_values_[j][k]);
-      }
-      printf("\n");
+  for(int j = 0; j < 32; j++){
+    for(int k = 0; k < 32; k++){
+      printf("%d ", positional_values_[j][k]);
     }
     printf("\n");
-    printf("\n");
+  }
+  printf("\n");
+  printf("\n");
 }
 
 #if 0

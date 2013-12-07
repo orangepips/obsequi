@@ -310,8 +310,8 @@ init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   }
 
   // Modify hashkeys to deal with positions which are already occupied.
-  for(int i = 0; i < num_rows; i++)
-    for(int j = 0; j < num_cols; j++)
+  for(int i = 0; i < num_rows; i++) {
+    for(int j = 0; j < num_cols; j++) {
       if(board[i][j] != 0){
         s32bit index;
 
@@ -327,6 +327,8 @@ init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
         index = ( (num_rows - i - 1) *num_cols) + (num_cols - j - 1);
         g_flipVH_hashkey.key[index/32] |= NTH_BIT(index%32);
       }
+    }
+  }
 
   init_hashkey_code(&g_norm_hashkey);
   init_hashkey_code(&g_flipV_hashkey);
@@ -500,7 +502,7 @@ void toggle_hash_code(int whos_turn, const Move& move) {
 
 extern void
 hashstore(s32bit value, s32bit alpha, s32bit beta,
-          u32bit nodes, s32bit depth, Move best, s32bit player)
+          u32bit nodes, s32bit depth, const Move& best, s32bit player)
 {
   s32bit index;
 

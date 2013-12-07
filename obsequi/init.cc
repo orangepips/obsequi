@@ -16,9 +16,17 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   Board* horz = g_boardx[HORIZONTAL] = new Board(num_rows, num_cols);
   g_boardx[VERTICAL] = horz->GetOpponent();
 
-  init_hashtable(num_rows, num_cols, board);
+  for(int i = 0; i < num_rows; i++) {
+    for(int j = 0; j < num_cols; j++) {
+      if(board[i][j] != 0){
+        horz->SetBlock(i, j);
+      }
+    }
+  }
 
   horz->Print();
   printf("\n");
   horz->PrintInfo();
+
+  init_hashtable(num_rows, num_cols, board);
 }

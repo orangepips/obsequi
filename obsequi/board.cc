@@ -25,8 +25,7 @@ void Board::Initialize(int num_rows, int num_cols, Board* opponent) {
     fatal_error(1, "Invalid board size %dX%d.\n", num_rows, num_cols);
   }
 
-  // TODO(nathan): Why is this set to 128? 256 is what obsequi.cc uses.
-  // TODO(nathan): 128 should be set as a constant.
+  // Hashtable uses a 128 bit key.
   if (num_rows * num_cols >= 128) {
     fatal_error(1, "Invalid board size %dX%d.\n", num_rows, num_cols);
   }
@@ -52,7 +51,8 @@ void Board::Initialize(int num_rows, int num_cols, Board* opponent) {
 }
 
 void Board::SetBlock(int row, int col) {
-  this->board[row+1] &= ~(NTH_BIT(col+1));
+  this->board[row+1] |= NTH_BIT(col+1);
+  this->opponent_->board[col+1] |= NTH_BIT(row+1);
 }
 
 void Board::InitInfo() {
