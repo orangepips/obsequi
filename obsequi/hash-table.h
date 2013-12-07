@@ -18,4 +18,6 @@ int hashlookup(s32bit *value, s32bit *alpha, s32bit *beta,
                s32bit depth_remaining,
                Move *force_first, s32bit player);
 
+void   print_external();
+
 #endif // HASH_TABLE_H

@@ -154,6 +154,32 @@ u64bit_to_string(u64bit val)
 
 
 //########################################################
+// Display functions.
+// These functions print out some set of information in what
+//   is hopefully a fairly readable format.
+//########################################################
+extern void
+print_u64bit(u64bit val)
+{
+  s32bit vals[10];
+  s32bit i = 0;
+
+  do {
+    vals[i] = val % 1000;
+    val = val / 1000;
+    i++;
+  } while(val != 0);
+
+  if(i > 10) fatal_error(1, "Too large???\n");
+
+  printf("%d", vals[--i]);
+
+  while(i != 0)
+    printf(",%3d", vals[--i]);
+}
+
+
+//########################################################
 // I'm not sure why I have this function.
 //  I suppose it may come in useful for performance analysis.
 //########################################################

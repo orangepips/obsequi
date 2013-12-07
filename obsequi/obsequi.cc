@@ -31,7 +31,7 @@
 #include <sys/time.h>
 #include <ctype.h>
 
-#include "interface.h"
+#include "globals.h"
 #include "cppflags.h"
 
 //########################################################

@@ -9,9 +9,8 @@
 #include <ctype.h>
 #include <algorithm>
 
-//#################################################################
-// Statistics gathering variables and functions.
-//#################################################################
+//#define RECORD_MOVES
+//#define DEBUG_NEGAMAX
 
 //=================================================================
 // Variables used for statistics gathering.
@@ -20,6 +19,25 @@ static s32bit cut1 = 0, cut2 = 0, cut3 = 0, cut4 = 0;
 static s32bit stat_cutoffs[40];
 static s32bit stat_nodes[40];
 static s32bit stat_nth_try[40][10];
+
+//#################################################################
+// Other variables.
+//#################################################################
+s32bit         g_empty_squares = 0;
+
+// Stats
+u64bit         g_num_nodes;
+s32bit         g_move_number[128];
+static s32bit g_starting_depth;
+
+#ifdef RECORD_MOVES
+static s32bit  g_move_player[128];
+static Move    g_move_position[128];
+#endif
+
+Board* g_boardx[2];
+s32bit g_board_size[2] = {-1,-1};
+
 
 //=================================================================
 // Print the statistics which we have gathered.
@@ -59,25 +77,51 @@ init_stats()
   }
 }
 
+extern void
+initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
+{
+  // Check if we need to re-initialize the solver.
+  //bool init = 1; //(g_trans_table == NULL || !horz || !vert ||
+              // horz->num_rows != num_rows || vert->num_rows != num_cols);
 
-//#################################################################
-// Other variables.
-//#################################################################
+  g_board_size[HORIZONTAL] = num_rows;
+  g_board_size[VERTICAL]   = num_cols;
 
-//#define RECORD_MOVES
-//#define DEBUG_NEGAMAX
+  Board* horz = g_boardx[HORIZONTAL] = new Board(num_rows, num_cols);
+  g_boardx[VERTICAL] = horz->GetOpponent();
 
-s32bit         g_empty_squares = 0;
+  for(int i = 0; i < num_rows; i++) {
+    for(int j = 0; j < num_cols; j++) {
+      if(board[i][j] != 0){
+        horz->SetBlock(i, j);
+      }
+    }
+  }
 
-// Stats
-u64bit         g_num_nodes;
-s32bit         g_move_number[128];
-static s32bit g_starting_depth;
+  horz->Print();
+  printf("\n");
+  horz->PrintInfo();
 
-#ifdef RECORD_MOVES
-static s32bit  g_move_player[128];
-static Move    g_move_position[128];
-#endif
+  init_hashtable(num_rows, num_cols, board);
+}
+
+extern const char*
+current_search_state()
+{
+  static char* str = NULL;
+
+  if(str != NULL) free(str);
+
+  int x = asprintf(&str, "Nodes: %s.\n%d %d %d %d %d %d %d %d %d %d %d %d.",
+                   u64bit_to_string(g_num_nodes),
+                   g_move_number[0], g_move_number[1], g_move_number[2],
+                   g_move_number[3], g_move_number[4], g_move_number[5],
+                   g_move_number[6], g_move_number[7], g_move_number[8],
+                   g_move_number[9], g_move_number[10], g_move_number[11]);
+  if (x == -1) exit(3);
+
+  return str;
+}
 
 
 //#################################################################

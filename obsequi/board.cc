@@ -138,3 +138,33 @@ void Board::ToggleMove(const Move& move) {
   opp->UpdateReal(col);
   opp->UpdateReal(col+1);
 }
+
+//========================================================
+// This function compares the Horizontal board info to
+//  the vertical board info.
+//========================================================
+/*
+extern void
+check_board_sanity()
+{
+  s32bit i, j;
+  s32bit count;
+
+  for(j = 0; j < g_board_size[HORIZONTAL] + 2; j++)
+    for(i = 0; i < g_board_size[VERTICAL] + 2; i++){
+      count = 0;
+
+      if(g_board[VERTICAL][i] & NTH_BIT(j)) count++;
+      if(g_board[HORIZONTAL][j] & NTH_BIT(i)) count++;
+
+      if(count == 1){
+        print_board(VERTICAL);
+        print_board(HORIZONTAL);
+
+        printf("%d %d - %d.\n", j, i, count);
+
+        fatal_error(1, "Board is inconsistent.\n");
+      }
+    }
+}
+*/
