@@ -4,6 +4,8 @@
 #include "move.h"
 #include "utils.h"
 
+#define KEYSIZE 4
+
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]);
 
 void check_hash_code_sanity();
@@ -19,5 +21,21 @@ int hashlookup(s32bit *value, s32bit *alpha, s32bit *beta,
                Move *force_first, s32bit player);
 
 void   print_external();
+
+
+struct HashKey {
+  HashKey();
+  ~HashKey() {}
+
+  // Prints the value of key_ and code_.
+  void Print();
+
+  // Validates that they key_ and code_ are consistent with each other.
+  void Validate();
+
+ private:
+  u32bit key_[KEYSIZE]; // Bitmap of occupied board positions.
+  s32bit code_; // Zobrist value for the given board position.
+};
 
 #endif // HASH_TABLE_H

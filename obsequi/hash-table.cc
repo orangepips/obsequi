@@ -24,6 +24,13 @@
 
 #define KEYSIZE 4
 
+#define FLIP_NORMAL 0
+#define FLIP_VERT 1
+#define FLIP_HORZ 2
+#define FLIP_VERT_HORZ 3
+#define FLIP_TOTAL 4
+
+
 //########################################################
 // Info we need for each entry in the hashtable.
 //########################################################
@@ -52,7 +59,6 @@ typedef struct
   u16bit type : 2; //UPPER, LOWER, EXACT.
 } Hash_Entry;
 
-
 //########################################################
 // structure used to store current key and it's hash code.
 //########################################################
@@ -61,7 +67,6 @@ typedef struct
   u32bit key[KEYSIZE];
   s32bit code;
 } Hash_Key;
-
 
 //########################################################
 // table_keyinfo
@@ -79,19 +84,22 @@ typedef struct
   KeyInfo_s flipV;
   KeyInfo_s flipH;
   KeyInfo_s flipVH;
+
+  KeyInfo_s info[FLIP_TOTAL];
 } KeyInfo;
 
 
 //========================================================
 // Global variables, lets get rid of these.
 //========================================================
-KeyInfo      g_keyinfo[2][32][32];
-
-// zobrist value for each position on the board.
-s32bit       g_zobrist[32][32];
-
 // Transposition table.
 Hash_Entry  *g_trans_table;
+
+// zobrist value for each position on the board.
+u32bit       g_zobrist[32][32];
+
+// KeyInfo
+KeyInfo      g_keyinfo[2][32][32];
 
 // Current boards hash key and code (flipped in various ways).
 Hash_Key     g_norm_hashkey;
@@ -167,16 +175,7 @@ print_hashentry(s32bit index)
 // ##################################################################
 // init_hashtable
 // ##################################################################
-static void
-negate_keyinfo(KeyInfo_s *keyinfo)
-{
-  keyinfo->bit1_index = keyinfo->bit2_index = -1;
-  keyinfo->hash_code = 0;
-}
-
-static void
-fill_in_hash_code(KeyInfo_s *info, s32bit num_cols)
-{
+void fill_in_hash_code(KeyInfo_s *info, s32bit num_cols) {
   s32bit r, c, hash = 0;
 
   r = info->bit1_index/num_cols;
@@ -192,115 +191,68 @@ fill_in_hash_code(KeyInfo_s *info, s32bit num_cols)
   info->hash_code = hash;
 }
 
-static void
-fill_in_key_entry(KeyInfo *keyinfo, s32bit num_rows, s32bit num_cols)
-{
-  if(keyinfo->norm.bit1_index == -1){
-    negate_keyinfo( & keyinfo->norm);
-    negate_keyinfo( & keyinfo->flipV);
-    negate_keyinfo( & keyinfo->flipH);
-    negate_keyinfo( & keyinfo->flipVH);
-  } else {
-    s32bit r1, c1, r2, c2;
+void fill_in_key_entry(KeyInfo *keyinfo, int bit1, int bit2,
+                       int num_rows, int num_cols) {
+  s32bit r1, c1, r2, c2;
 
-    r1 = keyinfo->norm.bit1_index/num_cols;
-    c1 = keyinfo->norm.bit1_index%num_cols;
-    r2 = keyinfo->norm.bit2_index/num_cols;
-    c2 = keyinfo->norm.bit2_index%num_cols;
+  r1 = bit1/num_cols;
+  c1 = bit1%num_cols;
+  r2 = bit2/num_cols;
+  c2 = bit2%num_cols;
 
-    keyinfo->flipV.bit1_index  = (r1*num_cols)+(num_cols - c1 - 1);
-    keyinfo->flipV.bit2_index  = (r2*num_cols)+(num_cols - c2 - 1);
+  keyinfo->norm.bit1_index  = bit1;
+  keyinfo->norm.bit2_index  = bit2;
 
-    keyinfo->flipH.bit1_index  = ((num_rows - r1 - 1) * num_cols) + c1;
-    keyinfo->flipH.bit2_index  = ((num_rows - r2 - 1) * num_cols) + c2;
+  // XX
+  keyinfo->flipV.bit1_index  = (r1*num_cols)+(num_cols - c1 - 1);
+  keyinfo->flipV.bit2_index  = (r2*num_cols)+(num_cols - c2 - 1);
 
-    keyinfo->flipVH.bit1_index = ( ((num_rows - r1 - 1) * num_cols)
-                                   + (num_cols - c1 - 1) );
-    keyinfo->flipVH.bit2_index = ( ((num_rows - r2 - 1) * num_cols)
-                                   + (num_cols - c2 - 1) );
+  keyinfo->flipH.bit1_index  = ((num_rows - r1 - 1) * num_cols) + c1;
+  keyinfo->flipH.bit2_index  = ((num_rows - r2 - 1) * num_cols) + c2;
 
-    fill_in_hash_code( & keyinfo->norm, num_cols);
-    fill_in_hash_code( & keyinfo->flipV, num_cols);
-    fill_in_hash_code( & keyinfo->flipH, num_cols);
-    fill_in_hash_code( & keyinfo->flipVH, num_cols);
-  }
+  keyinfo->flipVH.bit1_index = ( ((num_rows - r1 - 1) * num_cols)
+                                + (num_cols - c1 - 1) );
+  keyinfo->flipVH.bit2_index = ( ((num_rows - r2 - 1) * num_cols)
+                                 + (num_cols - c2 - 1) );
+
+  fill_in_hash_code( & keyinfo->norm, num_cols);
+  fill_in_hash_code( & keyinfo->flipV, num_cols);
+  fill_in_hash_code( & keyinfo->flipH, num_cols);
+  fill_in_hash_code( & keyinfo->flipVH, num_cols);
 }
 
-extern void
-init_less_static_tables()
-{
-  s32bit n_rows, n_cols, i, j, k;
-
-  n_rows = g_board_size[HORIZONTAL], n_cols = g_board_size[VERTICAL];
-
-  for(i = 0; i < 32; i++)
-    for(j = 0; j < 32; j++)
-      for(k = 0; k < 2; k++)
-        negate_keyinfo( & g_keyinfo[k][i][j].norm);
-
-  for(i = 0; i < n_rows; i++){
-    for(j = 0; j < n_cols; j++){
-      //Horizontal Entry
-      if(j + 1 < n_cols){
-        g_keyinfo[HORIZONTAL][i+1][j+1].norm.bit1_index = (i*n_cols)+j;
-        g_keyinfo[HORIZONTAL][i+1][j+1].norm.bit2_index = (i*n_cols)+(j+1);
-      }
-
-      //Vertical Entry
-      if(i + 1 < n_rows){
-        g_keyinfo[VERTICAL][j+1][i+1].norm.bit1_index   = (i*n_cols)+j;
-        g_keyinfo[VERTICAL][j+1][i+1].norm.bit2_index   = ((i+1)*n_cols)+j;
-      }
-    }
-  }
-
-  for(i = 0; i < 32; i++)
-    for(j = 0; j < 32; j++)
-      for(k = 0; k < 2; k++)
-        fill_in_key_entry(&g_keyinfo[k][i][j], n_rows, n_cols);
-}
-
-extern void
-initialize_solver()
-{
-  s32bit i, j;
-
-  if(g_trans_table == NULL){
-    // first time initialization stuff.
-    g_trans_table = (Hash_Entry*)malloc(HASHSIZE*sizeof(Hash_Entry));
-
-    // initialize zobrist values
-    srandom(1);
-    for(i=1; i<31; i++) {
-      for(j=1; j<31; j++) {
-        g_zobrist[i][j] = random() & HASHMASK;
-      }
-    }
-  }
-
-  init_less_static_tables();
-}
-
-static void
-init_hashkey_code(Hash_Key* key) {
-  int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
-  int n_cols = g_boardx[VERTICAL]->GetNumRows();
-
+void init_hashkey_code(Hash_Key* key, int n_rows, int n_cols) {
   key->code = 0;
-
-  for(int i = 0; i < n_rows; i++)
-    for(int j = 0; j < n_cols; j++){
-      int index = (i*n_cols) + j;
-      if(key->key[index/32] & NTH_BIT(index%32))
-        key->code ^= g_zobrist[i+1][j+1];
-    }
+  for(int i = 0; i < n_rows * n_cols; i++)
+    if(key->key[i/32] & NTH_BIT(i%32))
+      key->code ^= g_zobrist[(i / n_cols)+1][(i % n_cols)+1];
 }
 
-extern void
-init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
-{
-  bool init = 1;
-  if(init) initialize_solver();
+
+
+void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
+  g_trans_table = new Hash_Entry[HASHSIZE];
+
+  // initialize zobrist values
+  srandom(1);
+  for (int i = 0; i < 32; i++) {
+    for (int j = 0; j < 32; j++) {
+      g_zobrist[i][j] = random() & HASHMASK;
+    }
+  }
+
+  // Initialize g_keyinfo
+  for (int i = 0; i < num_rows; i++) {
+    for (int j = 0; j < num_cols; j++) {
+      if (j < num_cols - 1)
+        // XX
+        fill_in_key_entry(&g_keyinfo[HORIZONTAL][i+1][j+1],
+            (i*num_cols)+j, (i*num_cols)+j+1, num_rows, num_cols);
+      if (i < num_rows - 1)
+        fill_in_key_entry(&g_keyinfo[VERTICAL][j+1][i+1],
+            (i*num_cols)+j, ((i+1)*num_cols)+j, num_rows, num_cols);
+    }
+  }
 
   for(int i = 0; i < KEYSIZE; i++){
     g_norm_hashkey.key[i]   = 0;
@@ -315,6 +267,7 @@ init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
       if(board[i][j] != 0){
         s32bit index;
 
+        // XX
         index = (i*num_cols)+j;
         g_norm_hashkey.key[index/32] |= NTH_BIT(index%32);
 
@@ -330,10 +283,10 @@ init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
     }
   }
 
-  init_hashkey_code(&g_norm_hashkey);
-  init_hashkey_code(&g_flipV_hashkey);
-  init_hashkey_code(&g_flipH_hashkey);
-  init_hashkey_code(&g_flipVH_hashkey);
+  init_hashkey_code(&g_norm_hashkey, num_rows, num_cols);
+  init_hashkey_code(&g_flipV_hashkey, num_rows, num_cols);
+  init_hashkey_code(&g_flipH_hashkey, num_rows, num_cols);
+  init_hashkey_code(&g_flipVH_hashkey, num_rows, num_cols);
 
   check_hash_code_sanity();
 }
@@ -375,18 +328,11 @@ check_hashkey_bit_not_set(Hash_Key key, s32bit index)
 }
 
 static void
-check_hashkey_code(Hash_Key key)
-{
-  s32bit i, j, index, code;
-
-  int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
-  int n_cols = g_boardx[VERTICAL]->GetNumRows();
-
-  code = key.code;
-
-  for(i = 0; i < n_rows; i++)
-    for(j = 0; j < n_cols; j++){
-      index = (i*n_cols) + j;
+check_hashkey_code(Hash_Key key, int n_rows, int n_cols) {
+  int code = key.code;
+  for (int i = 0; i < n_rows; i++)
+    for (int j = 0; j < n_cols; j++){
+      int index = (i*n_cols) + j;
       if(key.key[index/32] & NTH_BIT(index%32))
         code ^= g_zobrist[i+1][j+1];
     }
@@ -397,46 +343,34 @@ check_hashkey_code(Hash_Key key)
 }
 
 extern void
-check_hash_code_sanity()
-{
-  s32bit i, j, index;
-
+check_hash_code_sanity() {
   int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
   int n_cols = g_boardx[VERTICAL]->GetNumRows();
 
-  for(i = 0; i < n_rows; i++)
-    for(j = 0; j < n_cols; j++)
+  for (int i = 0; i < n_rows; i++)
+    for (int j = 0; j < n_cols; j++) {
+      // XX
+      int flipx =  (i                * n_cols) + j;
+      int flipv =  (i                * n_cols) + (n_cols - j - 1);
+      int fliph =  ((n_rows - i - 1) * n_cols) + j;
+      int flipvh = ((n_rows - i - 1) * n_cols) + (n_cols - j - 1);
       if(g_boardx[HORIZONTAL]->board[i+1] & NTH_BIT(j+1)) {
-
-        index = (i*n_cols)+j;
-        check_hashkey_bit_set(g_norm_hashkey, index);
-
-        index = (i*n_cols) + (n_cols - j - 1);
-        check_hashkey_bit_set(g_flipV_hashkey, index);
-
-        index = ( (n_rows - i - 1) *n_cols) + j;
-        check_hashkey_bit_set(g_flipH_hashkey, index);
-
-        index = ( (n_rows - i - 1) *n_cols) + (n_cols - j - 1);
-        check_hashkey_bit_set(g_flipVH_hashkey, index);
+        check_hashkey_bit_set(g_norm_hashkey, flipx);
+        check_hashkey_bit_set(g_flipV_hashkey, flipv);
+        check_hashkey_bit_set(g_flipH_hashkey, fliph);
+        check_hashkey_bit_set(g_flipVH_hashkey, flipvh);
       } else {
-        index = (i*n_cols)+j;
-        check_hashkey_bit_not_set(g_norm_hashkey, index);
-
-        index = (i*n_cols)                  + (n_cols - j - 1);
-        check_hashkey_bit_not_set(g_flipV_hashkey, index);
-
-        index = ( (n_rows - i - 1) *n_cols) + j;
-        check_hashkey_bit_not_set(g_flipH_hashkey, index);
-
-        index = ( (n_rows - i - 1) *n_cols) + (n_cols - j - 1);
-        check_hashkey_bit_not_set(g_flipVH_hashkey, index);
+        check_hashkey_bit_not_set(g_norm_hashkey, flipx);
+        check_hashkey_bit_not_set(g_flipV_hashkey, flipv);
+        check_hashkey_bit_not_set(g_flipH_hashkey, fliph);
+        check_hashkey_bit_not_set(g_flipVH_hashkey, flipvh);
       }
+    }
 
-  check_hashkey_code(g_norm_hashkey);
-  check_hashkey_code(g_flipV_hashkey);
-  check_hashkey_code(g_flipH_hashkey);
-  check_hashkey_code(g_flipVH_hashkey);
+  check_hashkey_code(g_norm_hashkey, n_rows, n_cols);
+  check_hashkey_code(g_flipV_hashkey, n_rows, n_cols);
+  check_hashkey_code(g_flipH_hashkey, n_rows, n_cols);
+  check_hashkey_code(g_flipVH_hashkey, n_rows, n_cols);
 }
 
 
