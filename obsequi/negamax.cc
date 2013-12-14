@@ -37,6 +37,8 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   g_board_size[HORIZONTAL] = num_rows;
   g_board_size[VERTICAL]   = num_cols;
 
+  init_hashtable(num_rows, num_cols, board);
+
   Board* horz = g_boardx[HORIZONTAL] = new Board(num_rows, num_cols);
   g_boardx[VERTICAL] = horz->GetOpponent();
 
@@ -52,7 +54,7 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   printf("\n");
   horz->PrintInfo();
 
-  init_hashtable(num_rows, num_cols, board);
+  check_hash_code_sanity();
 }
 
 
@@ -118,14 +120,15 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
       g_empty_squares -= 2;
       curr->ToggleMove(move);
-      toggle_hash_code(whos_turn, move);
+      g_hashkey.Xor(curr->GetHashKeys(move));
       check_hash_code_sanity();
+      //exit(1);
 
       value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
 
       g_empty_squares += 2;
       curr->ToggleMove(move);
-      toggle_hash_code(whos_turn, move);
+      g_hashkey.Xor(curr->GetHashKeys(move));
       check_hash_code_sanity();
 
       printf("Move (%d,%d), value %d: %s.\n",
@@ -273,7 +276,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       // make move.
       g_empty_squares -= 2;
       curr->ToggleMove(movelist[i]);
-      toggle_hash_code(whos_turn, movelist[i]);
+      g_hashkey.Xor(curr->GetHashKeys(movelist[i]));
 
       // recurse.
       value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK, -beta, -alpha);
@@ -281,7 +284,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       // undo move.
       g_empty_squares += 2;
       curr->ToggleMove(movelist[i]);
-      toggle_hash_code(whos_turn, movelist[i]);
+      g_hashkey.Xor(curr->GetHashKeys(movelist[i]));
 
       // If this is a cutoff, break.
       if(value >= beta){

@@ -5,6 +5,7 @@
 #include "board-ops.h"
 #include "countmoves.h"
 #include "score-board.h"
+#include "hash-table.h"
 
 class PositionalValues;
 class Move;
@@ -34,7 +35,9 @@ class Board {
   void PrintInfo() const;
   void PrintBitboard() const;
 
-  //void HashKeys() const;
+  const HashKeys& GetHashKeys(const Move& move) const {
+    return move_hash_keys_[move.array_index][move.mask_index];
+  }
 
  public:
   // TODO(nathan): need to migrate these all to private.
@@ -63,7 +66,8 @@ class Board {
 
  private:
   Board(int num_rows, int num_cols, Board* opponent);
-  void Initialize(int num_rows, int num_cols, Board* opponent);
+  void Initialize(int num_rows, int num_cols, Board* opponent,
+                  bool is_horizontal);
   void InitInfo();
 
   // You can get the number of cols by looking at the opponent->num_rows.
@@ -71,6 +75,9 @@ class Board {
 
   // this and the opponent should always be kept consistent.
   Board* opponent_;
+
+  // HashKeys associated with every move.
+  HashKeys move_hash_keys_[32][32];
 
  private:
   // Disallow copy and assign.

@@ -4,20 +4,21 @@
 #include "consts.h"
 #include "positional-values.h"
 
+// Initialize Horizontal board.
 Board::Board(int num_rows, int num_cols)
-    : num_rows_(num_rows)
-{
+    : num_rows_(num_rows) {
   Board* opp = new Board(num_cols, num_rows, this);
-  this->Initialize(num_rows, num_cols, opp);
+  this->Initialize(num_rows, num_cols, opp, true /* is_horizontal */);
 }
 
+// Initialize Vertical board.
 Board::Board(int num_rows, int num_cols, Board* opponent)
-    : num_rows_(num_rows)
-{
-  this->Initialize(num_rows, num_cols, opponent);
+    : num_rows_(num_rows) {
+  this->Initialize(num_rows, num_cols, opponent, false /* !is_horizontal */);
 }
 
-void Board::Initialize(int num_rows, int num_cols, Board* opponent) {
+void Board::Initialize(int num_rows, int num_cols, Board* opponent,
+    bool is_horizontal) {
   this->opponent_ = opponent;
 
   if (num_rows < 1 || num_rows > MAX_ROWS-2 ||
@@ -48,6 +49,20 @@ void Board::Initialize(int num_rows, int num_cols, Board* opponent) {
 
   this->InitInfo();
   this->position = new PositionalValues(num_rows, num_cols);
+
+  // Initialize g_keyinfo
+  for (int i = 0; i < num_rows; i++) {
+    for (int j = 0; j < num_cols; j++) {
+      if (is_horizontal) {
+        move_hash_keys_[i+1][j+1].
+            Init(num_rows, num_cols, (i*num_cols)+j, (i*num_cols)+j+1);
+      } else {
+        move_hash_keys_[i+1][j+1].
+            Init(num_cols, num_rows, (j*num_rows)+i, ((j+1)*num_rows)+i);
+      }
+    }
+  }
+
 }
 
 void Board::SetBlock(int row, int col) {

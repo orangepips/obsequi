@@ -4,7 +4,7 @@
 #define MOVE_GEN_H
 
 #include "consts.h"
-#include "board.h"
+#include "utils.h"
 
 #define TWO_STAGE_GENERATION
 
@@ -13,6 +13,8 @@ struct Move {
   int mask_index;
   int info;
 };
+
+class Board;
 
 // Generate all the moves that can be made.
 // Places x moves into movelist and returns x.
