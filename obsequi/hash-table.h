@@ -33,6 +33,8 @@ struct HashKeys {
 
 extern HashKeys g_hashkey;
 
+u32bit get_zobrist_value(int row, int col);
+
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]);
 
 void check_hash_code_sanity();

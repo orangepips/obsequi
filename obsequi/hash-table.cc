@@ -61,14 +61,29 @@ struct Hash_Entry {
 // Global variables, lets get rid of these.
 //========================================================
 // zobrist value for each position on the board.
-u32bit       g_zobrist[32][32];
+u32bit* g_zobrist;
 
 // Transposition table.
-Hash_Entry  *g_trans_table;
+Hash_Entry* g_trans_table;
 
 // Current boards hash key and code (flipped in various ways).
 HashKeys     g_hashkey;
 
+
+// ##################################################################
+// Zobrist functionality.
+// ##################################################################
+u32bit get_zobrist_value(int row, int col) {
+  if (!g_zobrist) {
+    g_zobrist = new u32bit[32*32];
+    srandom(1);
+    for (int i = 0; i < 32*32; i++) {
+      g_zobrist[i] = random() & HASHMASK;
+    }
+  }
+
+  return g_zobrist[(row+1) * 32 + (col+1)];
+}
 
 // ##################################################################
 // HashKeys class.
@@ -76,7 +91,7 @@ HashKeys     g_hashkey;
 static void fill_in_hash_code(HashKey *info, int num_cols, int bit) {
   int r = bit / num_cols;
   int c = bit % num_cols;
-  info->code ^= g_zobrist[r+1][c+1];
+  info->code ^= get_zobrist_value(r, c);
   info->key[bit/64] ^= NTH_BIT(bit%64);
 }
 
@@ -116,14 +131,6 @@ void HashKeys::Print() const {
 // init_hashtable
 // ##################################################################
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
-  // initialize zobrist values
-  srandom(1);
-  for (int i = 0; i < 32; i++) {
-    for (int j = 0; j < 32; j++) {
-      g_zobrist[i][j] = random() & HASHMASK;
-    }
-  }
-
   // Initialize trans_table
   g_trans_table = new Hash_Entry[HASHSIZE];
 
@@ -203,7 +210,7 @@ check_hashkey_code(HashKey key, int n_rows, int n_cols) {
     for (int j = 0; j < n_cols; j++){
       int index = (i*n_cols) + j;
       if(key.key[index/64] & NTH_BIT(index%64))
-        code ^= g_zobrist[i+1][j+1];
+        code ^= get_zobrist_value(i, j);
     }
 
   if(code != 0){
