@@ -47,7 +47,8 @@ typedef  int32_t    s32bit;
 // Constants and Macros for dealing with bit masks.
 //=================================================================
 #define ALL_BITS         0xFFFFFFFF
-#define NTH_BIT(i)       ( 1 << (i) )
+#define ALL_BITS_64      0xFFFFFFFFFFFFFFFFul
+#define NTH_BIT(i)       ( 1ul << (i) )
 #define FIRST_N_BITS(i)  (~(ALL_BITS << (i)))
 #define LAST_N_BITS(i)   (~(ALL_BITS >> (i)))
 
