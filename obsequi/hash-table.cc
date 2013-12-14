@@ -22,8 +22,6 @@
 #define EXACT   1
 #define UPPER   2
 
-#define KEYSIZE 2
-
 #define FLIP_NORMAL 0
 #define FLIP_VERT 1
 #define FLIP_HORZ 2
@@ -34,10 +32,9 @@
 //########################################################
 // Info we need for each entry in the hashtable.
 //########################################################
-typedef struct
-{
+struct Hash_Entry {
   // uniquely identifies a board position.
-  u64bit key[KEYSIZE];
+  u64bit key[HASH_KEY_SIZE];
 
   // if real num of nodes exceeds ULONG_MAX set to ULONG_MAX.
   //   or maybe we could just shift the bits (larger granularity).
@@ -57,162 +54,77 @@ typedef struct
 
   // value of node determined with a search to `depth`.
   u16bit type : 2; //UPPER, LOWER, EXACT.
-} Hash_Entry;
+};
 
 //########################################################
 // structure used to store current key and it's hash code.
 //########################################################
-typedef struct
-{
-  u64bit key[KEYSIZE];
+struct Hash_Key {
+  u64bit key[HASH_KEY_SIZE];
   u32bit code;
-} Hash_Key;
+};
 
 //########################################################
 // table_keyinfo
 //########################################################
-typedef struct
-{
+struct KeyInfo {
   Hash_Key mod[FLIP_TOTAL];
-} KeyInfo;
+};
 
 
 //========================================================
 // Global variables, lets get rid of these.
 //========================================================
-// Transposition table.
-Hash_Entry  *g_trans_table;
-
 // zobrist value for each position on the board.
 u32bit       g_zobrist[32][32];
 
 // KeyInfo
 KeyInfo      g_keyinfo[2][32][32];
 
+// Transposition table.
+Hash_Entry  *g_trans_table;
+
 // Current boards hash key and code (flipped in various ways).
 Hash_Key     g_hashkey[FLIP_TOTAL];
 
 
 // ##################################################################
-// print_external
-// ##################################################################
-
-/*
-extern void
-print_keyinfo(KeyInfo_s info, s32bit with)
-{
-  if(info.bit1_index == -1) fatal_error(1, "bit1_index equal to -1");
-
-  if(with)
-    printf("%3d:%3d %8X ",
-           info.bit1_index, info.bit2_index, info.hash_code);
-  else
-    printf("%3d:%3d ",
-           info.bit1_index, info.bit2_index);
-}
-*/
-
-extern void
-print_keyinfo_table(s32bit player, s32bit with_hashcode)
-{
-  /*
-  s32bit r, c;
-
-  for(r = 0; r < 32; r++)
-    for(c = 0; c < 32; c++){
-      if(g_keyinfo[player][r][c].mod[FLIP_NORMAL].bit1_index != -1){
-
-        printf("(%2d,%2d)>>  ", r, c);
-
-        print_keyinfo(g_keyinfo[player][r][c].mod[FLIP_NORMAL], with_hashcode);
-        print_keyinfo(g_keyinfo[player][r][c].mod[FLIP_VERT], with_hashcode);
-        print_keyinfo(g_keyinfo[player][r][c].mod[FLIP_HORZ], with_hashcode);
-        print_keyinfo(g_keyinfo[player][r][c].mod[FLIP_VERT_HORZ], with_hashcode);
-        putchar('\n');
-      }
-    }
-    */
-}
-
-extern void
-print_external()
-{
-  print_keyinfo_table(HORIZONTAL, 1);
-  print_keyinfo_table(VERTICAL, 1);
-}
-
-
-// ##################################################################
-// print_hashentry
-// ##################################################################
-
-extern void
-print_hashentry(s32bit index)
-{
-  Hash_Entry entry = g_trans_table[index];
-
-  printf("Hash entry: %d.\n", index);
-  printf(" Key:%8lX:%8lX, n:%u, d:%d, w:%d"
-         ", v:%d, t:%d, int:%d.\n",
-         entry.key[0], entry.key[1],
-         entry.nodes, entry.depth, 0, //entry.whos_turn,
-         entry.value, entry.type, entry.best_move);
-}
-
-
-// ##################################################################
 // init_hashtable
 // ##################################################################
-#define HASHKEY_SET(key,index) (key)[(index)/64] ^= NTH_BIT((index)%64)
-void fill_in_hash_code2(Hash_Key *info, int num_cols, int bit1, int bit2) {
-  int r = bit1/num_cols;
-  int c = bit1%num_cols;
-
-  HASHKEY_SET(info->key, bit1);
-
+static void fill_in_hash_code(Hash_Key *info, int num_cols, int bit) {
+  int r = bit / num_cols;
+  int c = bit % num_cols;
   info->code ^= g_zobrist[r+1][c+1];
-
-  
-  r = bit2/num_cols;
-  c = bit2%num_cols;
-
-  HASHKEY_SET(info->key, bit2);
-
-  info->code ^= g_zobrist[r+1][c+1];
+  info->key[bit/64] ^= NTH_BIT(bit%64);
 }
 
-void fill_in_key_entry(KeyInfo *keyinfo, int bit1, int bit2,
+static void fill_in_key_entry(KeyInfo *keyinfo, int bit1, int bit2,
                        int num_rows, int num_cols) {
   int r1 = bit1/num_cols;
   int c1 = bit1%num_cols;
   int r2 = bit2/num_cols;
   int c2 = bit2%num_cols;
 
-  fill_in_hash_code2(&keyinfo->mod[FLIP_NORMAL], num_cols, bit1, bit2);
+  fill_in_hash_code(&keyinfo->mod[FLIP_NORMAL], num_cols, bit1);
+  fill_in_hash_code(&keyinfo->mod[FLIP_NORMAL], num_cols, bit2);
 
-  fill_in_hash_code2(&keyinfo->mod[FLIP_VERT], num_cols,
-      (r1*num_cols)+(num_cols - c1 - 1),
+  fill_in_hash_code(&keyinfo->mod[FLIP_VERT], num_cols,
+      (r1*num_cols)+(num_cols - c1 - 1));
+  fill_in_hash_code(&keyinfo->mod[FLIP_VERT], num_cols,
       (r2*num_cols)+(num_cols - c2 - 1));
 
-  fill_in_hash_code2(&keyinfo->mod[FLIP_HORZ], num_cols,
-      ((num_rows - r1 - 1) * num_cols) + c1,
+  fill_in_hash_code(&keyinfo->mod[FLIP_HORZ], num_cols,
+      ((num_rows - r1 - 1) * num_cols) + c1);
+  fill_in_hash_code(&keyinfo->mod[FLIP_HORZ], num_cols,
       ((num_rows - r2 - 1) * num_cols) + c2);
 
-  fill_in_hash_code2(&keyinfo->mod[FLIP_VERT_HORZ], num_cols,
-      ( ((num_rows - r1 - 1) * num_cols) + (num_cols - c1 - 1) ),
+  fill_in_hash_code(&keyinfo->mod[FLIP_VERT_HORZ], num_cols,
+      ( ((num_rows - r1 - 1) * num_cols) + (num_cols - c1 - 1) ));
+  fill_in_hash_code(&keyinfo->mod[FLIP_VERT_HORZ], num_cols,
       ( ((num_rows - r2 - 1) * num_cols) + (num_cols - c2 - 1) ));
 }
 
-void init_hashkey_code(Hash_Key* key, int n_rows, int n_cols) {
-  key->code = 0;
-  for(int i = 0; i < n_rows * n_cols; i++)
-    if(key->key[i/64] & NTH_BIT(i%64))
-      key->code ^= g_zobrist[(i / n_cols)+1][(i % n_cols)+1];
-}
-
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
-  g_trans_table = new Hash_Entry[HASHSIZE];
-
   // initialize zobrist values
   srandom(1);
   for (int i = 0; i < 32; i++) {
@@ -222,51 +134,50 @@ void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
   }
 
   // Initialize g_keyinfo
-  for (int i = 0; i < num_rows; i++) {
-    for (int j = 0; j < num_cols; j++) {
-      if (j < num_cols - 1)
-        // XX
-        fill_in_key_entry(&g_keyinfo[HORIZONTAL][i+1][j+1],
-            (i*num_cols)+j, (i*num_cols)+j+1, num_rows, num_cols);
-      if (i < num_rows - 1)
-        fill_in_key_entry(&g_keyinfo[VERTICAL][j+1][i+1],
-            (i*num_cols)+j, ((i+1)*num_cols)+j, num_rows, num_cols);
+  for (int i = 0; i < 32 - 1; i++) {
+    for (int j = 0; j < 32 - 1; j++) {
+      fill_in_key_entry(&g_keyinfo[HORIZONTAL][i+1][j+1],
+          (i*num_cols)+j, (i*num_cols)+j+1, num_rows, num_cols);
+      fill_in_key_entry(&g_keyinfo[VERTICAL][j+1][i+1],
+          (i*num_cols)+j, ((i+1)*num_cols)+j, num_rows, num_cols);
     }
   }
 
-  for (int i = 0; i < FLIP_TOTAL; i++) {
-    for(int j = 0; j < KEYSIZE; j++){
-      g_hashkey[i].key[j]   = 0;
-    }
-  }
+  // Initialize trans_table
+  g_trans_table = new Hash_Entry[HASHSIZE];
 
   // Modify hashkeys to deal with positions which are already occupied.
   for(int i = 0; i < num_rows; i++) {
     for(int j = 0; j < num_cols; j++) {
       if(board[i][j] != 0){
-        s32bit index;
-
-        // XX
-        index = (i*num_cols)+j;
-        g_hashkey[FLIP_NORMAL].key[index/64] |= NTH_BIT(index%64);
-
-        index = (i*num_cols) + (num_cols - j - 1);
-        g_hashkey[FLIP_VERT].key[index/64] |= NTH_BIT(index%64);
-
-        index = ( (num_rows - i - 1) *num_cols) + j;
-        g_hashkey[FLIP_HORZ].key[index/64] |= NTH_BIT(index%64);
-
-        index = ( (num_rows - i - 1) *num_cols) + (num_cols - j - 1);
-        g_hashkey[FLIP_VERT_HORZ].key[index/64] |= NTH_BIT(index%64);
+        fill_in_hash_code(&g_hashkey[FLIP_NORMAL], num_cols,
+            (i*num_cols)+j);
+        fill_in_hash_code(&g_hashkey[FLIP_VERT], num_cols,
+            (i*num_cols) + (num_cols - j - 1));
+        fill_in_hash_code(&g_hashkey[FLIP_HORZ], num_cols,
+            ( (num_rows - i - 1) *num_cols) + j);
+        fill_in_hash_code(&g_hashkey[FLIP_VERT_HORZ], num_cols,
+            ( (num_rows - i - 1) *num_cols) + (num_cols - j - 1));
       }
     }
   }
 
-  for (int j = 0; j < FLIP_TOTAL; j++) {
-    init_hashkey_code(&g_hashkey[j], num_rows, num_cols);
-  }
-
   check_hash_code_sanity();
+}
+
+
+// ##################################################################
+// print_hashentry
+// ##################################################################
+void print_hashentry(s32bit index) {
+  Hash_Entry entry = g_trans_table[index];
+
+  printf("Hash entry: %d.\n", index);
+  printf(" Key:%8lX:%8lX, n:%u, d:%d, w:%d"
+         ", v:%d, t:%d, int:%d.\n",
+         entry.key[0], entry.key[1],
+         entry.nodes, entry.depth, 0, //entry.whos_turn,
+         entry.value, entry.type, entry.best_move);
 }
 
 
@@ -359,7 +270,7 @@ void toggle_hash_code(int whos_turn, const Move& move) {
   KeyInfo info = g_keyinfo[whos_turn][move.array_index][move.mask_index];
 
   for (int i = 0; i < FLIP_TOTAL; i++) {
-    for (int j = 0; j < KEYSIZE; j++) {
+    for (int j = 0; j < HASH_KEY_SIZE; j++) {
       g_hashkey[i].key[j] ^= info.mod[i].key[j];
     }
     g_hashkey[i].code ^= info.mod[i].code;
@@ -379,7 +290,6 @@ void toggle_hash_code(int whos_turn, const Move& move) {
 
 #define TABLE_CMP_KEY(table,index,k)                              \
    (table[index].key[0] == k[0] && table[index].key[1] == k[1])
-
 
 #define STORE_ENTRY(x)                                          \
   index = (x).code;                                             \
@@ -426,7 +336,7 @@ hash_lookup_entry(const Hash_Key& key, s32bit *value,
                   s32bit depth_remaining, Move *force_first,
                   s32bit player) {
   int index = key.code;
-  if(TABLE_CMP_KEY(g_trans_table, index, key.key)
+  if (TABLE_CMP_KEY(g_trans_table, index, key.key)
      && g_trans_table[index].whos_turn == player ) {
     /* found matching entry.*/
 

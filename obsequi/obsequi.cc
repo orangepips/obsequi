@@ -266,8 +266,6 @@ get_solve_command()
 
   initialize_board(num_rows, num_cols, board);
 
-  //print_external(); exit(0);
-
   free(line);
   free(blocks);
 }
