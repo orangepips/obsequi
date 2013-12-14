@@ -21,50 +21,30 @@ class Board {
   Board(int num_rows, int num_cols);
   ~Board() {}
 
-  Board* GetOpponent() const { return opponent_; }
   int GetNumRows() const { return num_rows_; }
+  Board* GetOpponent() const { return opponent_; }
 
   void SetBlock(int row, int col);
-
   void ToggleMove(const Move& move);
+
+  bool IsGameOver(int* score) const;
+  bool IsGameOverExpensive(int* score);
 
   void Print() const;
   void PrintInfo() const;
   void PrintBitboard() const;
 
-  bool IsGameOver(int* score) const {
-    if(this->info_totals.safe > opponent_->info_totals.real){
-      // current player wins.
-      *score = 5000;
-      return true;
-    }
+  //void HashKeys() const;
 
-    if(opponent_->info_totals.safe >= this->info_totals.real){
-      // opponent wins.
-      *score = -5000;
-      return true;
-    }
-    return false;
-  }
+ public:
+  // TODO(nathan): need to migrate these all to private.
+  u32bit board[32];
 
-  bool IsGameOverExpensive(int* score) {
-    int a = does_next_player_win(this, 0);
-    if (a > 0) {
-      // current player wins.
-      *score = 5000;
-      return true;
-    }
+  // Basic safe move/real move stats.
+  BasicInfo info[32];
+  BasicInfo info_totals;
 
-    int b = does_who_just_moved_win(opponent_, 0);
-    if(b >= 0) {
-      // opponent wins.
-      *score = -5000;
-      return true;
-    }
-
-    *score = a - b;
-    return false;
-  }
+  PositionalValues* position;
 
  private:
   void UpdateSafe(int row) {
@@ -92,20 +72,44 @@ class Board {
   // this and the opponent should always be kept consistent.
   Board* opponent_;
 
- public:
-  // TODO(nathan): need to migrate these all to private.
-  u32bit board[32];
-
-  // Basic safe move/real move stats.
-  BasicInfo info[32];
-  BasicInfo info_totals;
-
-  PositionalValues* position;
-
  private:
   // Disallow copy and assign.
   Board(const Board&);
   void operator=(const Board&);
 };
+
+inline bool Board::IsGameOver(int* score) const {
+  if(this->info_totals.safe > opponent_->info_totals.real){
+    // current player wins.
+    *score = 5000;
+    return true;
+  }
+
+  if(opponent_->info_totals.safe >= this->info_totals.real){
+    // opponent wins.
+    *score = -5000;
+    return true;
+  }
+  return false;
+}
+ 
+inline bool Board::IsGameOverExpensive(int* score) {
+  int a = does_next_player_win(this, 0);
+  if (a > 0) {
+    // current player wins.
+    *score = 5000;
+    return true;
+  }
+
+  int b = does_who_just_moved_win(opponent_, 0);
+  if(b >= 0) {
+    // opponent wins.
+    *score = -5000;
+    return true;
+  }
+
+  *score = a - b;
+  return false;
+}
 
 #endif  // BOARD_H

@@ -4,7 +4,17 @@
 #include "move.h"
 #include "utils.h"
 
-#define KEYSIZE 4
+#define HASH_KEY_SIZE 4
+
+struct HashKey {
+  u32bit key[HASH_KEY_SIZE];
+  u32bit code;
+
+  void XOR(const HashKey& mod);
+  void Print() const;
+  // void Validate(const Board& board);
+};
+
 
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]);
 
@@ -22,7 +32,7 @@ int hashlookup(s32bit *value, s32bit *alpha, s32bit *beta,
 
 void   print_external();
 
-
+/*
 struct HashKey {
   HashKey();
   ~HashKey() {}
@@ -37,5 +47,5 @@ struct HashKey {
   u32bit key_[KEYSIZE]; // Bitmap of occupied board positions.
   s32bit code_; // Zobrist value for the given board position.
 };
-
+*/
 #endif // HASH_TABLE_H

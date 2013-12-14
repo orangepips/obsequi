@@ -65,7 +65,7 @@ typedef struct
 typedef struct
 {
   u32bit key[KEYSIZE];
-  s32bit code;
+  u32bit code;
 } Hash_Key;
 
 //########################################################
@@ -102,6 +102,8 @@ u32bit       g_zobrist[32][32];
 KeyInfo      g_keyinfo[2][32][32];
 
 // Current boards hash key and code (flipped in various ways).
+Hash_Key     g_hashkey[FLIP_TOTAL];
+
 Hash_Key     g_norm_hashkey;
 Hash_Key     g_flipV_hashkey;
 Hash_Key     g_flipH_hashkey;
@@ -193,31 +195,28 @@ void fill_in_hash_code(KeyInfo_s *info, s32bit num_cols) {
 
 void fill_in_key_entry(KeyInfo *keyinfo, int bit1, int bit2,
                        int num_rows, int num_cols) {
-  s32bit r1, c1, r2, c2;
-
-  r1 = bit1/num_cols;
-  c1 = bit1%num_cols;
-  r2 = bit2/num_cols;
-  c2 = bit2%num_cols;
-
-  keyinfo->norm.bit1_index  = bit1;
-  keyinfo->norm.bit2_index  = bit2;
+  int r1 = bit1/num_cols;
+  int c1 = bit1%num_cols;
+  int r2 = bit2/num_cols;
+  int c2 = bit2%num_cols;
 
   // XX
+  keyinfo->norm.bit1_index  = bit1;
+  keyinfo->norm.bit2_index  = bit2;
+  fill_in_hash_code( & keyinfo->norm, num_cols);
+
   keyinfo->flipV.bit1_index  = (r1*num_cols)+(num_cols - c1 - 1);
   keyinfo->flipV.bit2_index  = (r2*num_cols)+(num_cols - c2 - 1);
+  fill_in_hash_code( & keyinfo->flipV, num_cols);
 
   keyinfo->flipH.bit1_index  = ((num_rows - r1 - 1) * num_cols) + c1;
   keyinfo->flipH.bit2_index  = ((num_rows - r2 - 1) * num_cols) + c2;
+  fill_in_hash_code( & keyinfo->flipH, num_cols);
 
   keyinfo->flipVH.bit1_index = ( ((num_rows - r1 - 1) * num_cols)
                                 + (num_cols - c1 - 1) );
   keyinfo->flipVH.bit2_index = ( ((num_rows - r2 - 1) * num_cols)
                                  + (num_cols - c2 - 1) );
-
-  fill_in_hash_code( & keyinfo->norm, num_cols);
-  fill_in_hash_code( & keyinfo->flipV, num_cols);
-  fill_in_hash_code( & keyinfo->flipH, num_cols);
   fill_in_hash_code( & keyinfo->flipVH, num_cols);
 }
 
@@ -227,8 +226,6 @@ void init_hashkey_code(Hash_Key* key, int n_rows, int n_cols) {
     if(key->key[i/32] & NTH_BIT(i%32))
       key->code ^= g_zobrist[(i / n_cols)+1][(i % n_cols)+1];
 }
-
-
 
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
   g_trans_table = new Hash_Entry[HASHSIZE];
@@ -290,6 +287,7 @@ void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
 
   check_hash_code_sanity();
 }
+
 
 //########################################################
 // check_hash_code_sanity
