@@ -9,6 +9,7 @@ Board::Board(int num_rows, int num_cols)
     : num_rows_(num_rows) {
   Board* opp = new Board(num_cols, num_rows, this);
   this->Initialize(num_rows, num_cols, opp, true /* is_horizontal */);
+  opp->shared = shared = new BoardShared();
 }
 
 // Initialize Vertical board.

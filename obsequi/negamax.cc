@@ -14,7 +14,6 @@
 
 Board* g_boardx[2];
 s32bit g_board_size[2] = {-1,-1};
-s32bit g_empty_squares = 0;
 s32bit g_starting_depth;
 ObsequiStats g_stats;
 
@@ -80,9 +79,9 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
   Board* curr = g_boardx[whos_turn];
 
-  g_empty_squares = 0;
+  curr->shared->empty_squares = 0;
   for(i = 0; i < curr->GetNumRows(); i++)
-    g_empty_squares += countbits32( ~(curr->board[i+1]) );
+    curr->shared->empty_squares += countbits32( ~(curr->board[i+1]) );
 
   // Can we already determine a winner?
   int rv;
@@ -118,7 +117,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
       g_stats.move_number_[0] = i;
 
-      g_empty_squares -= 2;
+      curr->shared->empty_squares -= 2;
       curr->ToggleMove(move);
       g_hashkey.Xor(curr->GetHashKeys(move));
       check_hash_code_sanity();
@@ -126,7 +125,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
       value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
 
-      g_empty_squares += 2;
+      curr->shared->empty_squares += 2;
       curr->ToggleMove(move);
       g_hashkey.Xor(curr->GetHashKeys(move));
       check_hash_code_sanity();
@@ -274,7 +273,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       g_stats.move_number_[g_starting_depth - depth_remaining] = i;
 
       // make move.
-      g_empty_squares -= 2;
+      curr->shared->empty_squares -= 2;
       curr->ToggleMove(movelist[i]);
       g_hashkey.Xor(curr->GetHashKeys(movelist[i]));
 
@@ -282,7 +281,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK, -beta, -alpha);
 
       // undo move.
-      g_empty_squares += 2;
+      curr->shared->empty_squares += 2;
       curr->ToggleMove(movelist[i]);
       g_hashkey.Xor(curr->GetHashKeys(movelist[i]));
 

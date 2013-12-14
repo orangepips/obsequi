@@ -16,6 +16,15 @@ struct BasicInfo {
   int real;
 };
 
+class BoardShared {
+ public:
+  BoardShared() {
+    empty_squares = 0;
+  }
+
+  int empty_squares;
+};
+
 class Board {
  public:
   // Constructor actually creates two boards, this and the opponent.
@@ -48,6 +57,8 @@ class Board {
   BasicInfo info_totals;
 
   PositionalValues* position;
+
+  BoardShared* shared;
 
  private:
   void UpdateSafe(int row) {

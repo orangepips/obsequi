@@ -347,7 +347,7 @@ does_next_player_win(Board* boardx, bool print)
   //========================================================
   for(i = 0; i < 32; i++) tmp_board[i] = 0;
   safe  = boardx->info_totals.safe;
-  empty = g_empty_squares;
+  empty = boardx->shared->empty_squares;
 
   // Determine the number of protective regions that we have.
 #ifdef NO_PROT
@@ -520,7 +520,7 @@ does_who_just_moved_win(Board* boardx, bool print)
   // Initialize all of the values.
   //========================================================
   safe  = boardx->info_totals.safe;
-  empty = g_empty_squares;
+  empty = boardx->shared->empty_squares;
 
   // Determine the number of protective regions that we have.
 #ifdef NO_PROT
