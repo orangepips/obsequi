@@ -17,6 +17,7 @@ struct HashKey {
 
 struct HashKeys {
   void Init(int num_rows, int num_cols, int bit1, int bit2);
+  void Toggle(int num_rows, int num_cols, int bit);
   void Print() const;
 
   void Xor(const HashKeys& move) {
@@ -31,19 +32,17 @@ struct HashKeys {
   HashKey mod[FLIP_TOTAL];
 };
 
-extern HashKeys g_hashkey;
-
 u32bit get_zobrist_value(int row, int col);
 
 void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]);
 
-void check_hash_code_sanity();
+void check_hash_code_sanity(const HashKeys& keys);
 
-void hashstore(s32bit value, s32bit alpha, s32bit beta,
+void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
                u32bit nodes, s32bit depth_remaining,
                const Move& best, s32bit player);
 
-int hashlookup(s32bit *value, s32bit *alpha, s32bit *beta,
+int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
                s32bit depth_remaining,
                Move *force_first, s32bit player);
 

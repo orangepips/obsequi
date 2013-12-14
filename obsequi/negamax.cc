@@ -53,7 +53,7 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   printf("\n");
   horz->PrintInfo();
 
-  check_hash_code_sanity();
+  check_hash_code_sanity(horz->shared->hashkey);
 }
 
 
@@ -119,16 +119,15 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
       curr->shared->empty_squares -= 2;
       curr->ToggleMove(move);
-      g_hashkey.Xor(curr->GetHashKeys(move));
-      check_hash_code_sanity();
-      //exit(1);
+      curr->shared->hashkey.Xor(curr->GetHashKeys(move));
+      check_hash_code_sanity(curr->shared->hashkey);
 
       value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
 
       curr->shared->empty_squares += 2;
       curr->ToggleMove(move);
-      g_hashkey.Xor(curr->GetHashKeys(move));
-      check_hash_code_sanity();
+      curr->shared->hashkey.Xor(curr->GetHashKeys(move));
+      check_hash_code_sanity(curr->shared->hashkey);
 
       printf("Move (%d,%d), value %d: %s.\n",
              move.array_index, move.mask_index,
@@ -236,7 +235,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   //------------------------------------------
 
   forcefirst.array_index = -1;
-  if(hashlookup(&value, &alpha, &beta, depth_remaining,
+  if(hashlookup(curr->shared->hashkey, &value, &alpha, &beta, depth_remaining,
                 &forcefirst, whos_turn))
     return value;
   // since we aren't using iter deep not interested in forcefirst.
@@ -275,7 +274,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       // make move.
       curr->shared->empty_squares -= 2;
       curr->ToggleMove(movelist[i]);
-      g_hashkey.Xor(curr->GetHashKeys(movelist[i]));
+      curr->shared->hashkey.Xor(curr->GetHashKeys(movelist[i]));
 
       // recurse.
       value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK, -beta, -alpha);
@@ -283,7 +282,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       // undo move.
       curr->shared->empty_squares += 2;
       curr->ToggleMove(movelist[i]);
-      g_hashkey.Xor(curr->GetHashKeys(movelist[i]));
+      curr->shared->hashkey.Xor(curr->GetHashKeys(movelist[i]));
 
       // If this is a cutoff, break.
       if(value >= beta){
@@ -322,7 +321,8 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   } while(movelist.GenerateNextMoves(curr, forcefirst));
 
   // save the position in the hashtable
-  hashstore(alpha, init_alpha, init_beta, (g_stats.num_nodes_ - start_nodes) >> 5,
+  hashstore(curr->shared->hashkey, alpha, init_alpha, init_beta,
+            (g_stats.num_nodes_ - start_nodes) >> 5,
             depth_remaining, best, whos_turn);
 
   return alpha;

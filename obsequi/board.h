@@ -23,6 +23,7 @@ class BoardShared {
   }
 
   int empty_squares;
+  HashKeys hashkey;
 };
 
 class Board {

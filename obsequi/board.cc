@@ -63,12 +63,13 @@ void Board::Initialize(int num_rows, int num_cols, Board* opponent,
       }
     }
   }
-
 }
 
 void Board::SetBlock(int row, int col) {
   this->board[row+1] |= NTH_BIT(col+1);
   this->opponent_->board[col+1] |= NTH_BIT(row+1);
+  shared->hashkey.Toggle(num_rows_, opponent_->num_rows_,
+      (row*opponent_->num_rows_)+col);
 }
 
 void Board::InitInfo() {
