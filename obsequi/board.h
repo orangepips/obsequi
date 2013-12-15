@@ -36,7 +36,8 @@ class Board {
   Board* GetOpponent() const { return opponent_; }
 
   void SetBlock(int row, int col);
-  void ToggleMove(const Move& move);
+  void ApplyMove(const Move& move);
+  void UndoMove(const Move& move);
 
   bool IsGameOver(int* score) const;
   bool IsGameOverExpensive(int* score);
@@ -62,19 +63,9 @@ class Board {
   BoardShared* shared;
 
  private:
-  void UpdateSafe(int row) {
-    int count = count_safe(board, row);
-
-    info_totals.safe += count - info[row].safe;
-    info[row].safe = count;
-  }
-
-  void UpdateReal(int row) {
-    int count = count_real(board, row);
-
-    info_totals.real += count - info[row].real;
-    info[row].real = count;
-  }
+  void ToggleMove(const Move& move);
+  void UpdateSafe(int row);
+  void UpdateReal(int row);
 
  private:
   Board(int num_rows, int num_cols, Board* opponent);

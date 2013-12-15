@@ -1,4 +1,3 @@
-
 #include "globals.h"
 #include "move.h"
 #include "positional-values.h"
@@ -17,26 +16,16 @@ s32bit g_board_size[2] = {-1,-1};
 s32bit g_starting_depth;
 ObsequiStats g_stats;
 
-extern void
-current_search_state()
-{
+void current_search_state() {
   g_stats.PrintSearchState();
 }
 
 //=================================================================
 // Print the statistics which we have gathered.
 //=================================================================
-extern void
-initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
-{
-  // Check if we need to re-initialize the solver.
-  //bool init = 1; //(g_trans_table == NULL || !horz || !vert ||
-              // horz->num_rows != num_rows || vert->num_rows != num_cols);
-
+void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
   g_board_size[HORIZONTAL] = num_rows;
   g_board_size[VERTICAL]   = num_cols;
-
-  init_hashtable(num_rows, num_cols, board);
 
   Board* horz = g_boardx[HORIZONTAL] = new Board(num_rows, num_cols);
   g_boardx[VERTICAL] = horz->GetOpponent();
@@ -53,6 +42,7 @@ initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30])
   printf("\n");
   horz->PrintInfo();
 
+  init_hashtable(num_rows, num_cols, board);
   check_hash_code_sanity(horz->shared->hashkey);
 }
 
@@ -78,10 +68,6 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   else { fatal_error(1, "Invalid player.\n"); exit(1); }
 
   Board* curr = g_boardx[whos_turn];
-
-  curr->shared->empty_squares = 0;
-  for(i = 0; i < curr->GetNumRows(); i++)
-    curr->shared->empty_squares += countbits32( ~(curr->board[i+1]) );
 
   // Can we already determine a winner?
   int rv;
@@ -117,16 +103,12 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 
       g_stats.move_number_[0] = i;
 
-      curr->shared->empty_squares -= 2;
-      curr->ToggleMove(move);
-      curr->shared->hashkey.Xor(curr->GetHashKeys(move));
+      curr->ApplyMove(move);
       check_hash_code_sanity(curr->shared->hashkey);
 
       value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
 
-      curr->shared->empty_squares += 2;
-      curr->ToggleMove(move);
-      curr->shared->hashkey.Xor(curr->GetHashKeys(move));
+      curr->UndoMove(move);
       check_hash_code_sanity(curr->shared->hashkey);
 
       printf("Move (%d,%d), value %d: %s.\n",
@@ -271,18 +253,9 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       // A few statistics
       g_stats.move_number_[g_starting_depth - depth_remaining] = i;
 
-      // make move.
-      curr->shared->empty_squares -= 2;
-      curr->ToggleMove(movelist[i]);
-      curr->shared->hashkey.Xor(curr->GetHashKeys(movelist[i]));
-
-      // recurse.
+      curr->ApplyMove(movelist[i]);
       value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK, -beta, -alpha);
-
-      // undo move.
-      curr->shared->empty_squares += 2;
-      curr->ToggleMove(movelist[i]);
-      curr->shared->hashkey.Xor(curr->GetHashKeys(movelist[i]));
+      curr->UndoMove(movelist[i]);
 
       // If this is a cutoff, break.
       if(value >= beta){

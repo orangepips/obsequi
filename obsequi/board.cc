@@ -10,6 +10,7 @@ Board::Board(int num_rows, int num_cols)
   Board* opp = new Board(num_cols, num_rows, this);
   this->Initialize(num_rows, num_cols, opp, true /* is_horizontal */);
   opp->shared = shared = new BoardShared();
+  shared->empty_squares = num_rows * num_cols;
 }
 
 // Initialize Vertical board.
@@ -70,6 +71,58 @@ void Board::SetBlock(int row, int col) {
   this->opponent_->board[col+1] |= NTH_BIT(row+1);
   shared->hashkey.Toggle(num_rows_, opponent_->num_rows_,
       (row*opponent_->num_rows_)+col);
+  shared->empty_squares--;
+}
+
+inline void Board::UpdateSafe(int row) {
+  int count = count_safe(board, row);
+
+  info_totals.safe += count - info[row].safe;
+  info[row].safe = count;
+}
+
+inline void Board::UpdateReal(int row) {
+  int count = count_real(board, row);
+
+  info_totals.real += count - info[row].real;
+  info[row].real = count;
+}
+
+inline void Board::ToggleMove(const Move& move) {
+  Board* opp = opponent_;
+
+  int row = move.array_index;
+  int col = move.mask_index;
+
+  this->board[row] ^= (3<<col);
+  opp->board[col] ^= (1<<row);
+  opp->board[col+1] ^= (1<<row);
+
+  // update safe moves
+  if(row - 1 != 0) this->UpdateSafe(row-1);
+  this->UpdateSafe(row);
+  if(row != this->num_rows_) this->UpdateSafe(row+1);
+
+  if(col - 1 != 0) opp->UpdateSafe(col-1);
+  if(col + 1 != opp->num_rows_) opp->UpdateSafe(col+2);
+
+  // update real moves
+  this->UpdateReal(row);
+
+  opp->UpdateReal(col);
+  opp->UpdateReal(col+1);
+}
+
+void Board::ApplyMove(const Move& move) {
+  shared->empty_squares -= 2;
+  ToggleMove(move);
+  shared->hashkey.Xor(GetHashKeys(move));
+}
+
+void Board::UndoMove(const Move& move) {
+  shared->empty_squares += 2;
+  ToggleMove(move);
+  shared->hashkey.Xor(GetHashKeys(move));
 }
 
 void Board::InitInfo() {
@@ -129,31 +182,6 @@ void Board::PrintInfo() const {
 void Board::PrintBitboard() const {
   for(int i = 0; i < this->num_rows_ + 2; i++)
     printf("Ox%X\n", this->board[i]);
-}
-
-void Board::ToggleMove(const Move& move) {
-  Board* opp = opponent_;
-
-  int row = move.array_index;
-  int col = move.mask_index;
-
-  this->board[row]   ^= (3<<col);
-  opp->board[col]   ^= (1<<row);
-  opp->board[col+1] ^= (1<<row);
-
-  // update safe moves
-  if(row - 1 != 0) this->UpdateSafe(row-1);
-  this->UpdateSafe(row);
-  if(row != this->num_rows_) this->UpdateSafe(row+1);
-
-  if(col - 1 != 0) opp->UpdateSafe(col-1);
-  if(col + 1 != opp->num_rows_) opp->UpdateSafe(col+2);
-
-  // update real moves
-  this->UpdateReal(row);
-
-  opp->UpdateReal(col);
-  opp->UpdateReal(col+1);
 }
 
 //========================================================
