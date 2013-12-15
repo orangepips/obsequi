@@ -4,8 +4,8 @@
 
 #include "board-ops.h"
 #include "countmoves.h"
-#include "score-board.h"
 #include "hash-table.h"
+#include "score-board.h"
 
 class PositionalValues;
 class Move;

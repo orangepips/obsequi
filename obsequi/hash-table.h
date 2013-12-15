@@ -40,10 +40,10 @@ void check_hash_code_sanity(const HashKeys& keys);
 
 void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
                u32bit nodes, s32bit depth_remaining,
-               const Move& best, s32bit player);
+               const Move& best);
 
 int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
                s32bit depth_remaining,
-               Move *force_first, s32bit player);
+               Move *force_first);
 
 #endif // HASH_TABLE_H

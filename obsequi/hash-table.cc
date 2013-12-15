@@ -41,7 +41,8 @@ struct Hash_Entry {
   u32bit nodes;
 
   // uniquely identifies the previous best move for this position.
-  u8bit  best_move;
+  u8bit  mask_index;
+  u8bit  array_index;
 
   // depth of the search when this value was determined.
   u8bit  depth : 7;
@@ -134,10 +135,11 @@ void print_hashentry(s32bit index) {
 
   printf("Hash entry: %d.\n", index);
   printf(" Key:%8lX:%8lX, n:%u, d:%d, w:%d"
-         ", v:%d, t:%d, int:%d.\n",
+         ", v:%d, t:%d, int:%d,%d.\n",
          entry.key[0], entry.key[1],
          entry.nodes, entry.depth, 0, //entry.whos_turn,
-         entry.value, entry.type, entry.best_move);
+         entry.value, entry.type,
+         entry.mask_index, entry.array_index);
 }
 
 
@@ -227,9 +229,6 @@ check_hash_code_sanity(const HashKeys& keys) {
 // hashstore
 //########################################################
 
-#define MOVE_TO_INT(mv, player)   \
-   ((mv).mask_index-1)*g_board_size[(player)]+((mv).array_index-1)
-
 #define TABLE_SET_KEY(table,index,k)                          \
    table[index].key[0] = k[0], table[index].key[1] = k[1];
 
@@ -243,9 +242,9 @@ check_hash_code_sanity(const HashKeys& keys) {
      || g_trans_table[index].nodes <= nodes){                   \
     TABLE_SET_KEY(g_trans_table, index, (x).key);               \
     g_trans_table[index].nodes     =nodes;                      \
-    g_trans_table[index].best_move =MOVE_TO_INT(best,player);   \
+    g_trans_table[index].mask_index = best.mask_index;          \
+    g_trans_table[index].array_index = best.array_index;        \
     g_trans_table[index].depth     =depth;                      \
-    g_trans_table[index].whos_turn =player;                     \
     g_trans_table[index].value     =value;                      \
     if     (value>=beta) g_trans_table[index].type =LOWER;      \
     else if(value>alpha) g_trans_table[index].type =EXACT;      \
@@ -256,8 +255,7 @@ check_hash_code_sanity(const HashKeys& keys) {
 
 extern void
 hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
-          u32bit nodes, s32bit depth, const Move& best, s32bit player)
-{
+          u32bit nodes, s32bit depth, const Move& best) {
   s32bit index;
 
   for (int j = 0; j < FLIP_TOTAL; j++) {
@@ -270,23 +268,17 @@ hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
 // hashlookup
 //########################################################
 
-#define INT_TO_MOVE(mv, int, player)                    \
-   (mv).mask_index = ((int)/g_board_size[(player)])+1;  \
-   (mv).array_index = ((int)%g_board_size[(player)])+1
-
-
 static inline int
 hash_lookup_entry(const HashKey& key, s32bit *value,
                   s32bit *alpha, s32bit *beta,
-                  s32bit depth_remaining, Move *force_first,
-                  s32bit player) {
+                  s32bit depth_remaining, Move *force_first) {
   int index = key.code;
-  if (TABLE_CMP_KEY(g_trans_table, index, key.key)
-     && g_trans_table[index].whos_turn == player ) {
+  if (TABLE_CMP_KEY(g_trans_table, index, key.key)) {
     /* found matching entry.*/
 
     /* If nothing else we can use this entry to give us a good move. */
-    INT_TO_MOVE(*force_first, g_trans_table[index].best_move, player);
+    force_first->mask_index = g_trans_table[index].mask_index;
+    force_first->array_index = g_trans_table[index].array_index;
 
     /* use value if depth >= than the depth remaining in our search. */
     if(g_trans_table[index].depth >= depth_remaining) {
@@ -327,13 +319,10 @@ hash_lookup_entry(const HashKey& key, s32bit *value,
 
 extern s32bit
 hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
-           s32bit depth_remaining, Move *force_first, s32bit player)
-{
-  int rv;
-
+           s32bit depth_remaining, Move *force_first) {
   for (int j = 0; j < FLIP_TOTAL; j++) {
-    rv = hash_lookup_entry(keys.mod[j], value, alpha, beta,
-                           depth_remaining, force_first, player);
+    int rv = hash_lookup_entry(keys.mod[j], value, alpha, beta,
+                           depth_remaining, force_first);
     if (rv != -1) return rv;
   }
   return 0;

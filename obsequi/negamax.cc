@@ -51,7 +51,7 @@ void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
 // Negamax and driver functions. (and function prototype).
 //#################################################################
 static s32bit
-negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta);
+negamax(s32bit depth_remaining, Board* curr, s32bit alpha, s32bit beta);
 
 //=================================================================
 // Search for move function. (Negamax Driver)
@@ -106,7 +106,7 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
       curr->ApplyMove(move);
       check_hash_code_sanity(curr->shared->hashkey);
 
-      value = -negamax(d-1, whos_turn^PLAYER_MASK, -beta, -alpha);
+      value = -negamax(d-1, curr->GetOpponent(), -beta, -alpha);
 
       curr->UndoMove(move);
       check_hash_code_sanity(curr->shared->hashkey);
@@ -182,15 +182,12 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 // Negamax Function.
 //=================================================================
 static s32bit
-negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
+negamax(s32bit depth_remaining, Board* curr, s32bit alpha, s32bit beta)
 {
-  s32bit whos_turn = whos_turn_t & PLAYER_MASK;
   s32bit value;
   s32bit init_alpha = alpha, init_beta = beta;
   u64bit start_nodes = g_stats.num_nodes_;
   Move   forcefirst;
-
-  Board* curr = g_boardx[whos_turn];
 
   // increment a couple of stats
   g_stats.num_nodes_++;
@@ -218,7 +215,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
 
   forcefirst.array_index = -1;
   if(hashlookup(curr->shared->hashkey, &value, &alpha, &beta, depth_remaining,
-                &forcefirst, whos_turn))
+                &forcefirst))
     return value;
   // since we aren't using iter deep not interested in forcefirst.
   forcefirst.array_index = -1;
@@ -254,7 +251,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
       g_stats.move_number_[g_starting_depth - depth_remaining] = i;
 
       curr->ApplyMove(movelist[i]);
-      value = -negamax(depth_remaining-1,whos_turn^PLAYER_MASK, -beta, -alpha);
+      value = -negamax(depth_remaining-1, curr->GetOpponent(), -beta, -alpha);
       curr->UndoMove(movelist[i]);
 
       // If this is a cutoff, break.
@@ -296,7 +293,7 @@ negamax(s32bit depth_remaining, s32bit whos_turn_t, s32bit alpha, s32bit beta)
   // save the position in the hashtable
   hashstore(curr->shared->hashkey, alpha, init_alpha, init_beta,
             (g_stats.num_nodes_ - start_nodes) >> 5,
-            depth_remaining, best, whos_turn);
+            depth_remaining, best);
 
   return alpha;
 }
