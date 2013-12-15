@@ -9,7 +9,6 @@
 
 // Global variables.
 extern Board* g_boardx[2];
-extern s32bit g_board_size[2];
 
 //########################################################
 // This function gives the solver the current board that

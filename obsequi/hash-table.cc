@@ -36,30 +36,29 @@ struct Hash_Entry {
   // uniquely identifies a board position.
   u64bit key[HASH_KEY_SIZE];
 
+  // NOTE: performance seems to be very sensitive on data size.
+
   // if real num of nodes exceeds ULONG_MAX set to ULONG_MAX.
   //   or maybe we could just shift the bits (larger granularity).
   u32bit nodes;
 
+  // value of node determined with a search to `depth`.
+  s16bit value;
+
   // uniquely identifies the previous best move for this position.
-  u8bit  mask_index;
-  u8bit  array_index;
+  //u8bit mask_index;
+  //u8bit array_index;
 
   // depth of the search when this value was determined.
-  u8bit  depth : 7;
-
-  // whos turn it is.
-  u8bit  whos_turn : 1;
+  u8bit depth : 6;
 
   // value of node determined with a search to `depth`.
-  s16bit value : 14;
-
-  // value of node determined with a search to `depth`.
-  u16bit type : 2; //UPPER, LOWER, EXACT.
+  u8bit type : 2; //UPPER, LOWER, EXACT.
 };
 
 
 //========================================================
-// Global variables, lets get rid of these.
+// Global variables.
 //========================================================
 // zobrist value for each position on the board.
 u32bit* g_zobrist;
@@ -139,7 +138,7 @@ void print_hashentry(s32bit index) {
          entry.key[0], entry.key[1],
          entry.nodes, entry.depth, 0, //entry.whos_turn,
          entry.value, entry.type,
-         entry.mask_index, entry.array_index);
+         0, 0);//entry.mask_index, entry.array_index);
 }
 
 
@@ -235,31 +234,34 @@ check_hash_code_sanity(const HashKeys& keys) {
 #define TABLE_CMP_KEY(table,index,k)                              \
    (table[index].key[0] == k[0] && table[index].key[1] == k[1])
 
-#define STORE_ENTRY(x)                                          \
-  index = (x).code;                                             \
-                                                                \
-  if(TABLE_CMP_KEY(g_trans_table, index, (x).key)               \
-     || g_trans_table[index].nodes <= nodes){                   \
-    TABLE_SET_KEY(g_trans_table, index, (x).key);               \
-    g_trans_table[index].nodes     =nodes;                      \
-    g_trans_table[index].mask_index = best.mask_index;          \
-    g_trans_table[index].array_index = best.array_index;        \
-    g_trans_table[index].depth     =depth;                      \
-    g_trans_table[index].value     =value;                      \
-    if     (value>=beta) g_trans_table[index].type =LOWER;      \
-    else if(value>alpha) g_trans_table[index].type =EXACT;      \
-    else                 g_trans_table[index].type =UPPER;      \
-    return;                                                     \
+static inline bool hash_store_entry(
+    const HashKey& key, s32bit value, s32bit alpha, s32bit beta,
+    u32bit nodes, s32bit depth, const Move& best) {
+  int index = key.code;
+
+  if(g_trans_table[index].nodes <= nodes){
+    TABLE_SET_KEY(g_trans_table, index, key.key);
+    g_trans_table[index].nodes = nodes;
+    //g_trans_table[index].mask_index = best.mask_index;
+    //g_trans_table[index].array_index = best.array_index;
+    g_trans_table[index].depth = depth;
+    g_trans_table[index].value = value;
+    if (value>=beta) g_trans_table[index].type =LOWER;
+    else if (value>alpha) g_trans_table[index].type =EXACT;
+    else g_trans_table[index].type =UPPER;
+    // Only store a result once.
+    return true;
   }
+  return false;
+}
 
 
-extern void
-hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
-          u32bit nodes, s32bit depth, const Move& best) {
-  s32bit index;
-
-  for (int j = 0; j < FLIP_TOTAL; j++) {
-    STORE_ENTRY(keys.mod[j]);
+void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
+               u32bit nodes, s32bit depth, const Move& best) {
+  for (int i = 0; i < FLIP_TOTAL; i++) {
+    if (hash_store_entry(keys.mod[i], value, alpha, beta, nodes, depth, best)) {
+      return;
+    }
   }
 }
 
@@ -268,17 +270,16 @@ hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
 // hashlookup
 //########################################################
 
-static inline int
-hash_lookup_entry(const HashKey& key, s32bit *value,
-                  s32bit *alpha, s32bit *beta,
-                  s32bit depth_remaining, Move *force_first) {
+static inline int hash_lookup_entry(
+    const HashKey& key, s32bit *value, s32bit *alpha, s32bit *beta,
+    s32bit depth_remaining, Move *force_first) {
   int index = key.code;
   if (TABLE_CMP_KEY(g_trans_table, index, key.key)) {
     /* found matching entry.*/
 
     /* If nothing else we can use this entry to give us a good move. */
-    force_first->mask_index = g_trans_table[index].mask_index;
-    force_first->array_index = g_trans_table[index].array_index;
+    //force_first->mask_index = g_trans_table[index].mask_index;
+    //force_first->array_index = g_trans_table[index].array_index;
 
     /* use value if depth >= than the depth remaining in our search. */
     if(g_trans_table[index].depth >= depth_remaining) {
@@ -317,9 +318,8 @@ hash_lookup_entry(const HashKey& key, s32bit *value,
   return -1;
 }
 
-extern s32bit
-hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
-           s32bit depth_remaining, Move *force_first) {
+int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
+               s32bit depth_remaining, Move *force_first) {
   for (int j = 0; j < FLIP_TOTAL; j++) {
     int rv = hash_lookup_entry(keys.mod[j], value, alpha, beta,
                            depth_remaining, force_first);
