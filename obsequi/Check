@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 
 ##If any args are given to this script then we get stats for
@@ -148,8 +148,10 @@ echo 6
 flip 7 7 1
 flip 7 8 H
 
-# echo 7
+echo 7
 
-# flip 8 8 1
+flip 8 8 1
+
+echo 8
 
 exit 0

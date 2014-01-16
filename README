@@ -18,6 +18,3 @@ The V says it is verticals turn first.
 There are a number of run time options and compile time options, the
 compile time options are in cppflags.raw (don't change the other cppflags*
 files they are automatically changed.)
-
-
-
