@@ -4,6 +4,7 @@
 #include "utils.h"
 
 ObsequiStats::ObsequiStats() {
+  num_nodes_ = 0;
   // We should zero everything...
 }
 
