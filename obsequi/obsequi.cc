@@ -32,7 +32,6 @@
 #include <ctype.h>
 
 #include "globals.h"
-#include "cppflags.h"
 
 //########################################################
 // Function templates.
@@ -329,7 +328,7 @@ decode_switches(int argc, char **argv)
   while ((c = getopt(argc, argv, "wehl:t:v")) != -1){
     switch(c){
     case 'e':
-      printf("%s", option_string);
+      // printf("%s", option_string);
       exit(0);
 
     case 'h':

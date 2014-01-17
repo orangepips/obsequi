@@ -7,6 +7,8 @@
 //   and the zobrist values.
 //########################################################
 
+#define HASHCODEBITS 24
+
 #ifndef HASHCODEBITS
 #error "HASHCODEBITS must be defined.\n"
 #endif

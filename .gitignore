@@ -1,9 +1,4 @@
 *.swp
 *.swo
-*.o
-*.D
-.depend
-cppflags.h
 tags
 Obsequi
-a.out
