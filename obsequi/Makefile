@@ -26,7 +26,7 @@ tests: $(TESTS:%.cc=objs/%)
 
 # Domineering Solver, commandline controlled
 O_OBJSX= obsequi.o utils.o board.o negamax.o positional-values.o \
-	move.o hash-table.o stats.o lastbit.o countmoves.o score-board.o
+	move.o hash-table.o stats.o bitops.o score-board.o
 O_OBJS= $(addprefix objs/,$(O_OBJSX))
 Obsequi: $(O_OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@

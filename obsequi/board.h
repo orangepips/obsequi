@@ -2,8 +2,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include "bitops.h"
 #include "board-ops.h"
-#include "countmoves.h"
 #include "hash-table.h"
 #include "score-board.h"
 

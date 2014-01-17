@@ -3,8 +3,8 @@
 // the current board position.
 #include "move.h"
 
+#include "bitops.h"
 #include "globals.h"
-#include "lastbit.h"
 #include "positional-values.h"
 
 // We have proven that there are is no need to play safe moves.
@@ -34,7 +34,7 @@ move_generator(const Board& board, Move movelist[]) {
     while (m) {
       u32bit tmp = (m&-m);  // least sig bit of m
       m ^= tmp;  // remove least sig bit of m.
-      movelist[count].mask_index  = lastbit32(tmp);
+      movelist[count].mask_index  = obsequi::lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;
@@ -66,7 +66,7 @@ move_generator_stage1(const Board& board, Move movelist[]) {
     while(m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
-      movelist[count].mask_index  = lastbit32(tmp);
+      movelist[count].mask_index  = obsequi::lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;
@@ -99,7 +99,7 @@ move_generator_stage2(const Board& board, int start, Move movelist[]) {
     while(m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
-      movelist[count].mask_index  = lastbit32(tmp);
+      movelist[count].mask_index  = obsequi::lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;

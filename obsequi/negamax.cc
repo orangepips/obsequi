@@ -2,7 +2,6 @@
 #include "move.h"
 #include "positional-values.h"
 #include "hash-table.h"
-#include "countbits.h"
 #include "stats.h"
 
 #include <time.h>
