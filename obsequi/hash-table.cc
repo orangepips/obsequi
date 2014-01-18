@@ -1,6 +1,8 @@
 #include "hash-table.h"
 
-#include "globals.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 //########################################################
 // Constants used in conjuction with the transposition table
@@ -30,6 +32,7 @@
 #define FLIP_VERT_HORZ 3
 #define FLIP_TOTAL 4
 
+namespace obsequi {
 
 //########################################################
 // Info we need for each entry in the hashtable.
@@ -94,7 +97,7 @@ static void fill_in_hash_code(HashKey *info, int num_cols, int bit) {
   info->key[bit/64] ^= NTH_BIT(bit%64);
 }
 
-void HashKeys::Toggle(int num_rows, int num_cols, int bit) {
+void HashKeys::Toggle(int bit) {
   int row = bit / num_cols;
   int col = bit % num_cols;
 
@@ -107,9 +110,10 @@ void HashKeys::Toggle(int num_rows, int num_cols, int bit) {
       ( ((num_rows - row - 1) * num_cols) + (num_cols - col - 1) ));
 }
 
-void HashKeys::Init(int num_rows, int num_cols, int bit1, int bit2) {
-  Toggle(num_rows, num_cols, bit1);
-  Toggle(num_rows, num_cols, bit2);
+void HashKeys::Init(int num_rowsx, int num_colsx) {
+  num_rows = num_rowsx;
+  num_cols = num_colsx;
+  memset(mod, 0, sizeof(mod));
 }
 
 void HashKeys::Print() const {
@@ -147,6 +151,8 @@ void print_hashentry(s32bit index) {
 //########################################################
 // check_hash_code_sanity
 //########################################################
+
+/*
 extern void
 print_hashkey(HashKey key)
 {
@@ -194,9 +200,11 @@ check_hashkey_code(HashKey key, int n_rows, int n_cols) {
     fatal_error(1, "Invalid hash code.\n");
   }
 }
+*/
 
 extern void
 check_hash_code_sanity(const HashKeys& keys) {
+  /*
   int n_rows = g_boardx[HORIZONTAL]->GetNumRows();
   int n_cols = g_boardx[VERTICAL]->GetNumRows();
 
@@ -223,45 +231,31 @@ check_hash_code_sanity(const HashKeys& keys) {
   for (int j = 0; j < FLIP_TOTAL; j++) {
     check_hashkey_code(keys.mod[j], n_rows, n_cols);
   }
+  */
 }
 
 
 //########################################################
 // hashstore
 //########################################################
-
-#define TABLE_SET_KEY(table,index,k)                          \
-   table[index].key[0] = k[0], table[index].key[1] = k[1];
-
-#define TABLE_CMP_KEY(table,index,k)                              \
-   (table[index].key[0] == k[0] && table[index].key[1] == k[1])
-
-static inline bool hash_store_entry(
-    const HashKey& key, s32bit value, s32bit alpha, s32bit beta,
-    u32bit nodes, s32bit depth, const Move& best) {
-  int index = key.code;
-
-  if(g_trans_table[index].nodes <= nodes){
-    TABLE_SET_KEY(g_trans_table, index, key.key);
-    g_trans_table[index].nodes = nodes;
-    //g_trans_table[index].mask_index = best.mask_index;
-    //g_trans_table[index].array_index = best.array_index;
-    g_trans_table[index].depth = depth;
-    g_trans_table[index].value = value;
-    if (value>=beta) g_trans_table[index].type =LOWER;
-    else if (value>alpha) g_trans_table[index].type =EXACT;
-    else g_trans_table[index].type =UPPER;
-    // Only store a result once.
-    return true;
-  }
-  return false;
-}
-
-
 void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
                u32bit nodes, s32bit depth, const Move& best) {
   for (int i = 0; i < FLIP_TOTAL; i++) {
-    if (hash_store_entry(keys.mod[i], value, alpha, beta, nodes, depth, best)) {
+    int index = keys.mod[i].code;
+    Hash_Entry* entry = &g_trans_table[index];
+
+    if(entry->nodes <= nodes){
+      entry->key[0] = keys.mod[i].key[0];
+      entry->key[1] = keys.mod[i].key[1];
+      entry->nodes = nodes;
+      //entry->mask_index = best.mask_index;
+      //entry->array_index = best.array_index;
+      entry->depth = depth;
+      entry->value = value;
+      if (value>=beta) entry->type = LOWER;
+      else if (value>alpha) entry->type = EXACT;
+      else entry->type = UPPER;
+      // Only store a result once.
       return;
     }
   }
@@ -271,61 +265,54 @@ void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
 //########################################################
 // hashlookup
 //########################################################
+int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
+               s32bit depth_remaining, Move *force_first) {
+  for (int i = 0; i < FLIP_TOTAL; i++) {
+    int index = keys.mod[i].code;
+    Hash_Entry* entry = &g_trans_table[index];
 
-static inline int hash_lookup_entry(
-    const HashKey& key, s32bit *value, s32bit *alpha, s32bit *beta,
-    s32bit depth_remaining, Move *force_first) {
-  int index = key.code;
-  if (TABLE_CMP_KEY(g_trans_table, index, key.key)) {
-    /* found matching entry.*/
-
-    /* If nothing else we can use this entry to give us a good move. */
-    //force_first->mask_index = g_trans_table[index].mask_index;
-    //force_first->array_index = g_trans_table[index].array_index;
-
-    /* use value if depth >= than the depth remaining in our search. */
-    if(g_trans_table[index].depth >= depth_remaining) {
-
-      /* if the value is exact we can use it. */
-      if(g_trans_table[index].type == EXACT) {
-        *value=g_trans_table[index].value;
-        return 1;
-      }
-
-      /* if value is a lower bound we can possibly use it. */
-      if(g_trans_table[index].type == LOWER) {
-        if(g_trans_table[index].value>=(*beta)){
-          *value=g_trans_table[index].value;
+    if (entry->key[0] == keys.mod[i].key[0] &&
+        entry->key[1] == keys.mod[i].key[1]) {
+      /* found matching entry.*/
+  
+      /* If nothing else we can use this entry to give us a good move. */
+      //force_first->mask_index = entry->mask_index;
+      //force_first->array_index = entry->array_index;
+  
+      /* use value if depth >= than the depth remaining in our search. */
+      if(entry->depth >= depth_remaining) {
+  
+        /* if the value is exact we can use it. */
+        if(entry->type == EXACT) {
+          *value=entry->value;
           return 1;
         }
-        if(g_trans_table[index].value>(*alpha)){
-          *alpha=g_trans_table[index].value;
+  
+        /* if value is a lower bound we can possibly use it. */
+        if(entry->type == LOWER) {
+          if(entry->value>=(*beta)){
+            *value=entry->value;
+            return 1;
+          }
+          if(entry->value>(*alpha)){
+            *alpha=entry->value;
+          }
         }
-        return 0;
-      }
-
-      /* if value is a upper bound we can possibly use it. */
-      if(g_trans_table[index].type == UPPER) {
-        if(g_trans_table[index].value<=(*alpha)){
-          *value=g_trans_table[index].value;
-          return 1;
+  
+        /* if value is a upper bound we can possibly use it. */
+        if(entry->type == UPPER) {
+          if(entry->value<=(*alpha)){
+            *value=entry->value;
+            return 1;
+          }
+          if(entry->value<(*beta)){
+            *beta=entry->value;
+          }
         }
-        if(g_trans_table[index].value<(*beta)){
-          *beta=g_trans_table[index].value;
-        }
-        return 0;
       }
     }
   }
-  return -1;
-}
-
-int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
-               s32bit depth_remaining, Move *force_first) {
-  for (int j = 0; j < FLIP_TOTAL; j++) {
-    int rv = hash_lookup_entry(keys.mod[j], value, alpha, beta,
-                           depth_remaining, force_first);
-    if (rv != -1) return rv;
-  }
   return 0;
 }
+
+}  // namespace obsequi

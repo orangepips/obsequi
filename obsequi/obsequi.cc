@@ -23,15 +23,21 @@
 //  Web address   - www.cs.ualberta.ca/~bullock
 //********************************************************
 
-#include "utils.h"
+#include "base.h"
 
+#include <string.h>
 #include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <ctype.h>
 
-#include "globals.h"
+#include "negamax.h"
+#include "board.h"
+#include "hash-table.h"
+#include "stats.h"
 
 //########################################################
 // Function templates.
@@ -71,6 +77,13 @@ static long   stop_minutes = 0;
 
 static char   main_whos_turn;
 
+enum Direction {
+  HORIZONTAL = 0,
+  VERTICAL = 1
+};
+static obsequi::Board* g_boardx[2];
+static obsequi::ObsequiStats g_stats;
+
 
 //########################################################
 // Entry point to obsequi.
@@ -93,15 +106,34 @@ main(int argc, char** argv)
   // start solver.
   {
     s32bit row, col;
-    u64bit nodes;
     s32bit score;
     const char*  num_nodes;
 
-    score = search_for_move(main_whos_turn, &row, &col, &nodes);
+    // Set who's turn it is.
+    int whos_turn;
+    if(toupper(main_whos_turn) == 'V') whos_turn = VERTICAL;
+    else if(toupper(main_whos_turn) == 'H') whos_turn = HORIZONTAL;
+    else { fatal_error(1, "Invalid player.\n"); exit(1); }
+  
+    obsequi::Board* curr = g_boardx[whos_turn];
+
+    score = obsequi::search_for_move(curr, &g_stats, &row, &col);
+
+    if(whos_turn == HORIZONTAL){
+      // Nothing to do.
+    } else if(whos_turn == VERTICAL){
+      int tmp;
+      tmp = col;
+      col = row;
+      row = tmp;
+    } else {
+      fatal_error(1, "oops.");
+    }
 
     sig_block();
 
-    num_nodes = u64bit_to_string(nodes);
+    char buffer[80];
+    num_nodes = u64bit_to_string(g_stats.node_count_, buffer);
 
     // print results.
     if(score >= 5000){
@@ -136,6 +168,30 @@ main(int argc, char** argv)
   }
 
   return 0;
+}
+
+//=================================================================
+// Print the statistics which we have gathered.
+//=================================================================
+void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
+  obsequi::Board* horz = new obsequi::Board(num_rows, num_cols);
+  g_boardx[HORIZONTAL] = horz;
+  g_boardx[VERTICAL] = horz->GetOpponent();
+
+  for(int i = 0; i < num_rows; i++) {
+    for(int j = 0; j < num_cols; j++) {
+      if(board[i][j] != 0){
+        horz->SetBlock(i, j);
+      }
+    }
+  }
+
+  horz->Print();
+  printf("\n");
+  horz->PrintInfo();
+
+  obsequi::init_hashtable(num_rows, num_cols, board);
+  check_hash_code_sanity(horz->GetHashKeys());
 }
 
 
@@ -328,7 +384,7 @@ decode_switches(int argc, char **argv)
   while ((c = getopt(argc, argv, "wehl:t:v")) != -1){
     switch(c){
     case 'e':
-      // printf("%s", option_string);
+      //printf("%s", option_string);
       exit(0);
 
     case 'h':
@@ -372,7 +428,7 @@ decode_switches(int argc, char **argv)
 static void
 sig_int_handler(int sig)
 {
-  current_search_state();
+  g_stats.PrintSearchState();
 
   // fprintf(stderr, "%s\n", str);
   // fflush(stderr);

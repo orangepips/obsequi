@@ -2,12 +2,15 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include "bitops.h"
-#include "board-ops.h"
+#include "base.h"
 #include "hash-table.h"
-#include "score-board.h"
+
+#include <memory>
 
 class PositionalValues;
+
+namespace obsequi {
+
 class Move;
 
 // Basic board info which we keep track of.
@@ -16,68 +19,73 @@ struct BasicInfo {
   int real;
 };
 
-class BoardShared {
- public:
-  BoardShared() {
-    empty_squares = 0;
-  }
-
-  int empty_squares;
-  HashKeys hashkey;
-};
-
 class Board {
  public:
-  // Constructor actually creates two boards, this and the opponent.
+  // Constructor actually creates two boards, *this (horizontal) and the
+  // opponent (vertical).
   Board(int num_rows, int num_cols);
-  ~Board() {}
+  ~Board();
 
+  // GetNumCols = GetOpponent()->GetNumRows()
   int GetNumRows() const { return num_rows_; }
   Board* GetOpponent() const { return opponent_; }
 
   void SetBlock(int row, int col);
   void ApplyMove(const Move& move);
   void UndoMove(const Move& move);
+  // Sadly not const since we modify internal state for performance reasons.
+  int ScoreMove(const Move& move);
+
+  // Note that the array returned is always a length of 32.
+  const u32bit* GetBoard() const { return board_; }
+  const BasicInfo& GetInfo() const { return info_totals; }
+  int GetEmptySquares() const { return shared->empty_squares; }
+  const HashKeys& GetHashKeys() const { return shared->hashkey; }
 
   bool IsGameOver(int* score) const;
-  bool IsGameOverExpensive(int* score);
 
   void Print() const;
   void PrintInfo() const;
   void PrintBitboard() const;
 
+ private:
+  // Constructor for vertical.
+  Board(int num_rows, int num_cols, Board* opponent);
+  void Initialize(int num_rows, int num_cols, Board* opponent);
+  void InitInfo();
+
   const HashKeys& GetHashKeys(const Move& move) const {
     return move_hash_keys_[move.array_index][move.mask_index];
   }
 
- public:
-  // TODO(nathan): need to migrate these all to private.
-  u32bit board[32];
+  void ToggleMove(const Move& move);
+  void UpdateSafe(int row);
+  void UpdateReal(int row);
+
+  struct BoardShared {
+    int empty_squares;
+    HashKeys hashkey;
+  };
+
+  // bitmap of the current board state.
+  u32bit board_[32];
+
+  // You can get the number of cols by looking at the opponent->num_rows.
+  const int num_rows_;
+  const bool is_horizontal;
 
   // Basic safe move/real move stats.
   BasicInfo info[32];
   BasicInfo info_totals;
 
-  PositionalValues* position;
-
-  BoardShared* shared;
-
- private:
-  void ToggleMove(const Move& move);
-  void UpdateSafe(int row);
-  void UpdateReal(int row);
-
- private:
-  Board(int num_rows, int num_cols, Board* opponent);
-  void Initialize(int num_rows, int num_cols, Board* opponent,
-                  bool is_horizontal);
-  void InitInfo();
-
-  // You can get the number of cols by looking at the opponent->num_rows.
-  const int num_rows_;
-
-  // this and the opponent should always be kept consistent.
+  // this* and opponent_ should always be kept consistent.
+  std::unique_ptr<Board> owner_opponent_;
   Board* opponent_;
+
+  std::unique_ptr<PositionalValues> position;
+
+  std::unique_ptr<BoardShared> owner_shared_;
+  BoardShared* shared;
 
   // HashKeys associated with every move.
   HashKeys move_hash_keys_[32][32];
@@ -102,24 +110,6 @@ inline bool Board::IsGameOver(int* score) const {
   }
   return false;
 }
- 
-inline bool Board::IsGameOverExpensive(int* score) {
-  int a = does_next_player_win(this, 0);
-  if (a > 0) {
-    // current player wins.
-    *score = 5000;
-    return true;
-  }
 
-  int b = does_who_just_moved_win(opponent_, 0);
-  if(b >= 0) {
-    // opponent wins.
-    *score = -5000;
-    return true;
-  }
-
-  *score = a - b;
-  return false;
-}
-
+}  // namespace obsequi
 #endif  // BOARD_H

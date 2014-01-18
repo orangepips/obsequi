@@ -2,7 +2,7 @@
 #define HASH_TABLE_H
 
 #include "move.h"
-#include "utils.h"
+#include "base.h"
 
 // 64 bits * 2 - Can handle boards with 128 positions
 #define HASH_KEY_SIZE 2
@@ -10,14 +10,17 @@
 // 4 ways we can flip the board: none, vert, horz, and vert/horz.
 #define FLIP_TOTAL 4
 
+namespace obsequi {
+
 struct HashKey {
   u64bit key[HASH_KEY_SIZE];
   u32bit code;
 };
 
 struct HashKeys {
-  void Init(int num_rows, int num_cols, int bit1, int bit2);
-  void Toggle(int num_rows, int num_cols, int bit);
+  void Init(int num_rows, int num_cols);
+  void Toggle(int bit);
+
   void Print() const;
 
   void Xor(const HashKeys& move) {
@@ -29,6 +32,8 @@ struct HashKeys {
     }
   }
 
+  int num_rows;
+  int num_cols;
   HashKey mod[FLIP_TOTAL];
 };
 
@@ -46,4 +51,5 @@ int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
                s32bit depth_remaining,
                Move *force_first);
 
+}  // namespace obsequi
 #endif // HASH_TABLE_H

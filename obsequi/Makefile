@@ -25,7 +25,7 @@ all: Obsequi tests
 tests: $(TESTS:%.cc=objs/%)
 
 # Domineering Solver, commandline controlled
-O_OBJSX= obsequi.o utils.o board.o negamax.o positional-values.o \
+O_OBJSX= obsequi.o base.o board.o negamax.o positional-values.o \
 	move.o hash-table.o stats.o bitops.o score-board.o
 O_OBJS= $(addprefix objs/,$(O_OBJSX))
 Obsequi: $(O_OBJS)
@@ -33,6 +33,8 @@ Obsequi: $(O_OBJS)
 
 # Tests
 objs/bitops_test: bitops_test.cc objs/bitops.o
+objs/board_test: board_test.cc objs/move.o objs/board.o objs/bitops.o \
+    objs/base.o objs/hash-table.o objs/positional-values.o
 objs/move_test: move_test.cc objs/move.o objs/board.o objs/bitops.o \
     objs/base.o objs/hash-table.o objs/positional-values.o
 

@@ -1,29 +1,35 @@
 #ifndef STATS_H
 #define STATS_H
 
-struct ObsequiStats {
+#include "base.h"
+
+namespace obsequi {
+
+struct ObsequiLevelStats {
+  long int node_count_;
+  long int poor_move_cost_;
+  long int win_count_;
+  long int win_move_[10];
+
+  long int cut_simple_;
+  long int cut_expensive_;
+  long int cut_transp_;
+
+  // TODO(nathanbullock): Should we record more, like the move made?
+  int curr_move_;
+};
+
+class ObsequiStats {
+ public:
   ObsequiStats();
-  ~ObsequiStats() {}
 
   void PrintStats();
   void PrintSearchState();
 
-  // Total nodes searched.
-  long int num_nodes_;
-
-  // Depth based stats.
-  int depth_cutoffs_[60];
-  int depth_nodes_[60];
-  int depth_nth_try_[60][10];
-
-  // Cuts made because of:
-  int depth_cut_;
-  int game_over_simple_;
-  int game_over_expensive_;
-
-  // Current search state info.
-  // TODO(nathanbullock): Should we record more, like the move made?
-  int move_number_[60];
+  long int node_count_;
+  ObsequiLevelStats level_[MAX_SEARCH_DEPTH];
 };
+
+}  // namespace obsequi
 
 #endif // STATS_H

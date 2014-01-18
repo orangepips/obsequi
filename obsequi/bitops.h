@@ -1,7 +1,7 @@
 #ifndef OBSEQUI_BITOPS_H
 #define OBSEQUI_BITOPS_H
 
-#include "utils.h"
+#include "base.h"
 
 namespace obsequi {
 

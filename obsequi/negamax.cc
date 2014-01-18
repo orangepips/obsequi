@@ -1,74 +1,31 @@
-#include "globals.h"
-#include "move.h"
-#include "positional-values.h"
+#include "negamax.h"
+
+#include <stdio.h>
+#include "board.h"
 #include "hash-table.h"
+#include "move.h"
+#include "score-board.h"
 #include "stats.h"
 
-#include <time.h>
-#include <ctype.h>
-#include <algorithm>
-
-//#define DEBUG_NEGAMAX
-
-Board* g_boardx[2];
-s32bit g_starting_depth;
-ObsequiStats g_stats;
-
-void current_search_state() {
-  g_stats.PrintSearchState();
-}
-
-//=================================================================
-// Print the statistics which we have gathered.
-//=================================================================
-void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
-  Board* horz = g_boardx[HORIZONTAL] = new Board(num_rows, num_cols);
-  g_boardx[VERTICAL] = horz->GetOpponent();
-
-  for(int i = 0; i < num_rows; i++) {
-    for(int j = 0; j < num_cols; j++) {
-      if(board[i][j] != 0){
-        horz->SetBlock(i, j);
-      }
-    }
-  }
-
-  horz->Print();
-  printf("\n");
-  horz->PrintInfo();
-
-  init_hashtable(num_rows, num_cols, board);
-  check_hash_code_sanity(horz->shared->hashkey);
-}
-
+namespace obsequi {
 
 //#################################################################
 // Negamax and driver functions. (and function prototype).
 //#################################################################
-static s32bit
-negamax(s32bit depth_remaining, Board* curr, s32bit alpha, s32bit beta);
+static int negamax(int depth, int remaining, Board* curr, ObsequiStats* stats,
+                   int alpha, int beta);
 
 //=================================================================
 // Search for move function. (Negamax Driver)
 //=================================================================
-extern s32bit
-search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
-{
-  s32bit  d, i, value = 0;
-  s32bit  whos_turn;
-
-  // Set who's turn it is.
-  if(toupper(dir) == 'V')      whos_turn = VERTICAL;
-  else if(toupper(dir) == 'H') whos_turn = HORIZONTAL;
-  else { fatal_error(1, "Invalid player.\n"); exit(1); }
-
-  Board* curr = g_boardx[whos_turn];
+extern int
+search_for_move(Board* curr, ObsequiStats* stats, int *row, int *col) {
+  int  i, value = 0;
 
   // Can we already determine a winner?
   int rv;
   if (curr->IsGameOver(&rv)) {
     *col = *row = -1;
-    *nodes = 0;
     return rv;
   }
 
@@ -76,67 +33,56 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
   movelist.GenerateAllMoves(curr);
 
   // Really this is for iterative deepening.
-  for(d = 1; d < 50; d += 44){
+  for (int d = 1; d < 50; d += 44) {
 
     // Initialize alpha and beta.
-    s32bit alpha = -5000, beta = 5000;
+    int alpha = -5000, beta = 5000;
 
     // Re-initialize the statistics for each iteration.
-    g_stats.num_nodes_ = 0;
-    g_stats = ObsequiStats();
-
-    // set what the starting max depth is.
-    g_starting_depth = d;
+    *stats = ObsequiStats();
 
     // iterate through all the possible moves.
-    for(i = 0; i < movelist.length(); i++){
+    for (i = 0; i < movelist.Size(); i++) {
       Move& move = movelist[i];
       //set_position_values();
 
       //curr->position->Print();
       //curr->GetOpponent()->position->Print();
 
-      g_stats.move_number_[0] = i;
+      stats->level_[0].node_count_++;
+      stats->level_[0].curr_move_ = i;
 
       curr->ApplyMove(move);
-      check_hash_code_sanity(curr->shared->hashkey);
+      check_hash_code_sanity(curr->GetHashKeys());
 
-      value = -negamax(d-1, curr->GetOpponent(), -beta, -alpha);
+      value = -negamax(1, d-1, curr->GetOpponent(), stats, -beta, -alpha);
 
       curr->UndoMove(move);
-      check_hash_code_sanity(curr->shared->hashkey);
+      check_hash_code_sanity(curr->GetHashKeys());
 
+      char buffer[80];
       printf("Move (%d,%d), value %d: %s.\n",
              move.array_index, move.mask_index,
-             value, u64bit_to_string(g_stats.num_nodes_));
+             value, u64bit_to_string(stats->node_count_, buffer));
       printf("alpha %d, beta %d.\n", alpha, beta);
 
       move.info = value;
 
-      if(value >= beta){
+      if (value >= beta) {
         alpha = value;
         break;
       }
-      if(value > alpha) {
+      if (value > alpha) {
         alpha = value;
       }
     }
 
-    if(value >= 5000){
+    if (value >= 5000) {
       printf("Winner found: %d.\n", value);
-      if(whos_turn == HORIZONTAL){
-        *row = movelist[i].array_index;
-        *col = movelist[i].mask_index;
-      } else if(whos_turn == VERTICAL){
-        *col = movelist[i].array_index;
-        *row = movelist[i].mask_index;
-      } else {
-        fatal_error(1, "oops.");
-      }
+      *row = movelist[i].array_index;
+      *col = movelist[i].mask_index;
 
-      *nodes = g_stats.num_nodes_;
-
-      g_stats.PrintStats();
+      stats->PrintStats();
 
       return value;
     }
@@ -144,18 +90,18 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     // remove lossing moves from movelist.
     /*  iterative deepening...
     {
-      s32bit rem = 0;
-      for(i = 0; i < num_moves; i++){
-        if(movelist[i].info <= -5000) rem++;
-        else if(rem > 0) movelist[i-rem] = movelist[i];
+      int rem = 0;
+      for (i = 0; i < num_moves; i++) {
+        if (movelist[i].info <= -5000) rem++;
+        else if (rem > 0) movelist[i-rem] = movelist[i];
       }
       num_moves -= rem;
     }
     */
 
-    g_stats.PrintStats();
+    stats->PrintStats();
 
-    //if(num_moves == 0){
+    //if (num_moves == 0) {
     //  break;
     //}
 
@@ -163,11 +109,10 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
     //sort_moves(movelist, 0, num_moves);
 
     printf("The value is %d at a depth of %d.\n", value, d);
-    printf("Nodes: %lu.\n", g_stats.num_nodes_);
+    printf("Nodes: %lu.\n", stats->node_count_);
   }
 
   *col = *row = -1;
-  *nodes = g_stats.num_nodes_;
 
   return value;
 }
@@ -176,22 +121,23 @@ search_for_move(char dir, s32bit *row, s32bit *col, u64bit *nodes)
 //=================================================================
 // Negamax Function.
 //=================================================================
-static s32bit
-negamax(s32bit depth_remaining, Board* curr, s32bit alpha, s32bit beta)
-{
-  s32bit value;
-  s32bit init_alpha = alpha, init_beta = beta;
-  u64bit start_nodes = g_stats.num_nodes_;
+static int negamax(int depth, int remaining, Board* curr, ObsequiStats* stats,
+                   int alpha, int beta) {
+  int value;
+  int init_alpha = alpha, init_beta = beta;
   Move   forcefirst;
+  ObsequiLevelStats* level_stats = &stats->level_[depth];
 
   // increment a couple of stats
-  g_stats.num_nodes_++;
-  g_stats.depth_nodes_[g_starting_depth - depth_remaining]++;
+  stats->node_count_++;
+  level_stats->node_count_++;
+
+  u64bit start_nodes = stats->node_count_;
 
   // if no depth remaining stop search.
-  if( depth_remaining <= 0 ){
+  if (remaining <= 0) {
     int rv;
-    curr->IsGameOverExpensive(&rv);
+    is_game_over_expensive(*curr, *curr->GetOpponent(), &rv);
     return rv;
   }
 
@@ -200,18 +146,26 @@ negamax(s32bit depth_remaining, Board* curr, s32bit alpha, s32bit beta)
   //------------------------------------------
   int rv;
   if (curr->IsGameOver(&rv)) {
-    g_stats.game_over_simple_++;
+    /*
+    static int pc = 0;
+    if (pc < 10) {
+      printf("You lose.\n");
+      curr->Print();
+      pc++;
+    }*/
+    level_stats->cut_simple_++;
     return rv;
   }
 
   //------------------------------------------
   // check transposition table
   //------------------------------------------
-
   forcefirst.array_index = -1;
-  if(hashlookup(curr->shared->hashkey, &value, &alpha, &beta, depth_remaining,
-                &forcefirst))
+  if (hashlookup(curr->GetHashKeys(), &value, &alpha, &beta, remaining,
+                 &forcefirst)) {
+    level_stats->cut_transp_++;
     return value;
+  }
   // since we aren't using iter deep not interested in forcefirst.
   forcefirst.array_index = -1;
 
@@ -219,76 +173,67 @@ negamax(s32bit depth_remaining, Board* curr, s32bit alpha, s32bit beta)
   //------------------------------------------
   // Can we determine a winner yet (look harder).
   //------------------------------------------
-  if (curr->IsGameOverExpensive(&rv)) {
-    g_stats.game_over_expensive_++;
+  if (is_game_over_expensive(*curr, *curr->GetOpponent(), &rv)) {
+    level_stats->cut_expensive_++;
     return rv;
-
-/*
-#ifdef DEBUG_NEGAMAX
-    if(random() % 1000000 == -1){
-      does_next_player_win(curr, 1);
-      print_board(whos_turn);
-    }
-#endif
-*/
   }
 
-  int i = 0;
+  const Move* m;
   MoveList movelist;
-  movelist.GenerateNextMoves(curr, forcefirst);
   Move best = movelist[0];
 
-  do {
-    // Iterate through all the moves.
-    for(; i < movelist.length(); i++){
+  while ((m = movelist.GetNext(curr)) != nullptr) {
+    u64bit poor_move_cost = stats->node_count_ - start_nodes;
 
-      // A few statistics
-      g_stats.move_number_[g_starting_depth - depth_remaining] = i;
+    // A few statistics
+    level_stats->curr_move_ = movelist.Index();
 
-      curr->ApplyMove(movelist[i]);
-      value = -negamax(depth_remaining-1, curr->GetOpponent(), -beta, -alpha);
-      curr->UndoMove(movelist[i]);
+    curr->ApplyMove(*m);
+    value = -negamax(depth+1, remaining-1, curr->GetOpponent(), stats,
+                     -beta, -alpha);
+    curr->UndoMove(*m);
 
-      // If this is a cutoff, break.
-      if(value >= beta){
-        alpha = value;
-        best  = movelist[i];
+    // If this is a cutoff, break.
+    if (value >= beta) {
+      alpha = value;
+      best  = *m;
 
-        g_stats.depth_cutoffs_[g_starting_depth - depth_remaining]++;
-        if(i < 5) g_stats.depth_nth_try_[g_starting_depth - depth_remaining][i]++;
-        else g_stats.depth_nth_try_[g_starting_depth - depth_remaining][5]++;
-        
-        /*
-        int depth = g_starting_depth - depth_remaining;
-        if (i > 0 && depth < 12) {
-          printf("Really Bad First move.\n");
-          curr->Print();
-          for (int j = 0; j < movelist.length(); j++) {
-            printf("Move %d: Row (%d,%d), Score: %d %lu %s\n",
-                j, movelist[j].array_index, movelist[j].mask_index,
-                movelist[j].info, g_stats.num_nodes_ - start_nodes, (i == j) ? "(*)" : "");
-          }
+      level_stats->win_count_++;
+      if (movelist.Index() < 5) {
+        level_stats->win_move_[movelist.Index()]++;
+      } else {
+        level_stats->win_move_[5]++;
+      }
+      level_stats->poor_move_cost_ += poor_move_cost;
+
+      /*
+      if (i > 0 && depth < 7) {
+        printf("Really Bad First move.\n");
+        curr->Print();
+        for (int j = 0; j < movelist.length(); j++) {
+          printf("Move %d: Row (%d,%d), Score: %d %lu %s\n",
+              j, movelist[j].array_index, movelist[j].mask_index,
+              movelist[j].info, stats->node_count_ - start_nodes,
+              (i == j) ? "(*)" : "");
         }
-        */
-        break;
       }
-
-      // If the current value is greater than alpha, increase alpha.
-      if(value > alpha) {
-        alpha = value;
-        best  = movelist[i];
-      }
+      */
+      break;
     }
-    // If we have broken out of previous FOR loop make sure we break out
-    //   of this loop as well.
-    if(value >= beta) break;
 
-  } while(movelist.GenerateNextMoves(curr, forcefirst));
+    // If the current value is greater than alpha, increase alpha.
+    if (value > alpha) {
+      alpha = value;
+      best = *m;
+    }
+  }
 
   // save the position in the hashtable
-  hashstore(curr->shared->hashkey, alpha, init_alpha, init_beta,
-            (g_stats.num_nodes_ - start_nodes) >> 5,
-            depth_remaining, best);
+  hashstore(curr->GetHashKeys(), alpha, init_alpha, init_beta,
+            (stats->node_count_ - start_nodes) >> 5,
+            remaining, best);
 
   return alpha;
 }
+
+}  // namespace obsequi

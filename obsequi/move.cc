@@ -1,40 +1,33 @@
-// The following functions are used to generate all the possible
-// moves which could be made, for a certain player, given
-// the current board position.
 #include "move.h"
 
 #include "bitops.h"
-#include "globals.h"
-#include "positional-values.h"
+#include "board.h"
 
-// We have proven that there are is no need to play safe moves.
-// (unless that is all that is left to play).
-#undef PLAY_SAFE_MOVES
+#include <assert.h>
+
+#define TWO_STAGE_GENERATION
+
+namespace obsequi {
 
 //=================================================================
 // This function generates all the moves in one pass.
 //=================================================================
-int
-move_generator(const Board& board, Move movelist[]) {
+int move_generator(const Board& board, Move movelist[]) {
   int count = 0;
-  const u32bit* rows = board.board;
+  const u32bit* rows = board.GetBoard();
 
   for (int i = 0; i < board.GetNumRows(); i++) {
     u32bit curr_row = rows[i+1];
 
-#ifdef PLAY_SAFE_MOVES
-    u32bit m = ~(curr_row|(curr_row>>1));
-#else
     // m contains a 1 at each position where there is valid move.
     // (except safe moves, since there is no need to play them)
     u32bit prot_rows = rows[i] & rows[i+2];
     u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows&(prot_rows>>1)));
-#endif
 
     while (m) {
       u32bit tmp = (m&-m);  // least sig bit of m
       m ^= tmp;  // remove least sig bit of m.
-      movelist[count].mask_index  = obsequi::lastbit32(tmp);
+      movelist[count].mask_index  = lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;
@@ -50,12 +43,11 @@ move_generator(const Board& board, Move movelist[]) {
 //   we will not have to evaluate the second half) and in sorting the
 //   moves.
 //=================================================================
-int
-move_generator_stage1(const Board& board, Move movelist[]) {
+int move_generator_stage1(const Board& board, Move movelist[]) {
   int count = 0;
-  const u32bit* rows = board.board;
+  const u32bit* rows = board.GetBoard();
 
-  for(int i = 0; i < board.GetNumRows(); i++){
+  for (int i = 0; i < board.GetNumRows(); i++){
     u32bit curr_row = rows[i+1];
     u32bit prot_rows = rows[i] & rows[i+2];
 
@@ -63,10 +55,10 @@ move_generator_stage1(const Board& board, Move movelist[]) {
     // which is a vulnerable move with no protected squares.
     u32bit m = ~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1)));
 
-    while(m){
+    while (m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
-      movelist[count].mask_index  = obsequi::lastbit32(tmp);
+      movelist[count].mask_index  = lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;
@@ -76,30 +68,22 @@ move_generator_stage1(const Board& board, Move movelist[]) {
   return count;
 }
 
-int
-move_generator_stage2(const Board& board, int start, Move movelist[]) {
+int move_generator_stage2(const Board& board, int start, Move movelist[]) {
   int count = start;
-  const u32bit* rows = board.board;
+  const u32bit* rows = board.GetBoard();
 
-  for(int i = 0; i < board.GetNumRows(); i++){
+  for (int i = 0; i < board.GetNumRows(); i++){
     u32bit curr_row = rows[i+1];
     u32bit prot_rows = rows[i] & rows[i+2];
 
-#ifndef PLAY_SAFE_MOVES
     // m will contain a 1 at each position that there is a move
     //   which is a vulnerable move with a protected squares.
     u32bit m = ~((curr_row|(curr_row>>1)) | (~(prot_rows^(prot_rows>>1))) );
-#else
-    // m will contain a 1 at each position that there is a move
-    //   which is a vulnerable move with a protected squares.
-    u32bit m = ((~((curr_row|(curr_row>>1)) | (prot_rows|(prot_rows>>1))))
-         ^ (~(curr_row|(curr_row>>1))));
-#endif
 
-    while(m){
+    while (m){
       u32bit tmp = (m&-m); // least sig bit of m
       m ^= tmp;     // remove least sig bit of m.
-      movelist[count].mask_index  = obsequi::lastbit32(tmp);
+      movelist[count].mask_index  = lastbit32(tmp);
       movelist[count].array_index = i+1;
       movelist[count].info        = 0;
       count++;
@@ -122,25 +106,23 @@ move_generator_stage2(const Board& board, int start, Move movelist[]) {
 //=================================================================
 // This is a stable sort algorithm (uses a bucket sort algorithm).
 //=================================================================
-extern void
-sort_moves(Move movelist[MAXMOVES], s32bit start, s32bit num_moves)
-{
-  Move    bucket[NUM_BUCKETS][MAXMOVES];
-  s32bit  buck_val[NUM_BUCKETS];
-  s32bit  buck_size[NUM_BUCKETS];
+void sort_moves(Move movelist[MAX_MOVES], s32bit start, s32bit num_moves) {
+  Move bucket[NUM_BUCKETS][MAX_MOVES];
+  s32bit buck_val[NUM_BUCKETS];
+  s32bit buck_size[NUM_BUCKETS];
 
   s32bit num_buckets = 0, i, j;
 
   // place each move in it's proper bucket.
-  for(i = start; i < num_moves; i++){
-    for(j = 0; j < num_buckets; j++){
-      if(movelist[i].info == buck_val[j]){
+  for (i = start; i < num_moves; i++){
+    for (j = 0; j < num_buckets; j++){
+      if (movelist[i].info == buck_val[j]){
         bucket[j][buck_size[j]++] = movelist[i];
         break;
       }
     }
-    if(j == num_buckets){
-      if(j == NUM_BUCKETS) fatal_error(1, "Not enough buckets.\n");
+    if (j == num_buckets){
+      if (j == NUM_BUCKETS) fatal_error(1, "Not enough buckets.\n");
       bucket[j][0] = movelist[i];
       buck_val[j] = movelist[i].info;
       buck_size[j] = 1;
@@ -152,19 +134,19 @@ sort_moves(Move movelist[MAXMOVES], s32bit start, s32bit num_moves)
   {
     s32bit best, index, count = start;
 
-    while(count != num_moves){
+    while (count != num_moves){
 
       best = buck_val[0];
       index = 0;
 
-      for(i = 1; i < num_buckets; i++)
-        if(buck_val[i] > best) index = i, best = buck_val[i];
+      for (i = 1; i < num_buckets; i++)
+        if (buck_val[i] > best) index = i, best = buck_val[i];
 
       // every bucket must have at least one move.
       i = 0;
       do {
         movelist[count++] = bucket[index][i++];
-      } while(i < buck_size[index]);
+      } while (i < buck_size[index]);
 
       buck_val[index] = -5000;
     }
@@ -172,116 +154,90 @@ sort_moves(Move movelist[MAXMOVES], s32bit start, s32bit num_moves)
 }
 
 
-//#define DEBUG_SCORE_MOVE
+static inline void score_and_get_first(Board* board, Move movelist[],
+                                       int num_moves) {
+  int max = -50000;
+  int max_index = -1;
 
-static inline s32bit
-score_move(Board* boardx, const Move& move)
-{
-  u32bit* board = boardx->board;
-  u32bit* opp_board = boardx->GetOpponent()->board;
+  // assert(num_moves > 0);
 
-  int row = move.array_index;
-  int col = move.mask_index;
-
-  board[row]   ^= (3<<col);
-  opp_board[col]   ^= (1<<row);
-  opp_board[col+1] ^= (1<<row);
-
-  Board* horz = boardx;
-  Board* vert = boardx->GetOpponent();
-
-  int safe_created = 0;
-
-  // update real moves
-  int score = count_real(board, row) - horz->info[row].real;
-
-  score -= count_real(opp_board, col) - vert->info[col].real;
-  score -= count_real(opp_board, col + 1) - vert->info[col+1].real;
-
-  // update safe moves
-  if(row - 1 != 0)
-    safe_created += count_safe(board, row - 1) - horz->info[row-1].safe;
-  score += count_safe(board, row) - horz->info[row].safe;
-  if(row != horz->GetNumRows())
-    safe_created += count_safe(board, row+1) - horz->info[row+1].safe;
-
-  if(col - 1 != 0)
-    score -= count_safe(opp_board, col - 1) - vert->info[col-1].safe;
-  if(col + 1 != vert->GetNumRows())
-    score -= count_safe(opp_board, col + 2) - vert->info[col+2].safe;
-
-  score += safe_created;
-  /* The following does seem to slightly improve move ordering.
-  if (safe_created > 0) {  // Creating safe moves is really good.
-    score += 2;
-  } else {
-    u32bit mask = (3 << col);
-    if (((mask & board[row+1]) == mask && (mask & ~board[row-1]) == mask) ||
-        ((mask & board[row-1]) == mask && (mask & ~board[row+1]) == mask)) {
-      // Playing in a position where a safe move could have been created is
-      // just silly.
-      score -= 20;
+  for (int i = 0; i < num_moves; i++) {
+    movelist[i].info = board->ScoreMove(movelist[i]);
+    if (movelist[i].info > max){
+      max = movelist[i].info;
+      max_index = i;
     }
   }
-  */
-
-  // Reset the board to how we found it.
-  // Sadly this makes it so we can't declare the 'boardx' arg as a const.
-  board[row]   ^= (3<<col);
-  opp_board[col]   ^= (1<<row);
-  opp_board[col+1] ^= (1<<row);
-
-  score *= 128;
-  score += boardx->position->GetValue(row, col);
-
-  return score;
-}
-
-extern void
-score_and_get_first(Board* board, Move movelist[MAXMOVES], s32bit num_moves,
-                    const Move& first)
-{
-  s32bit i, max = -50000, max_index = -1;
-
-  //========================================================
-  // Give the move from the hashtable a large sorting value.
-  //========================================================
-  /*
-  {
-    int z = 0;
-    for (z = 0; z < num_moves; z++)
-      printf("> %d %d\n", movelist[z].array_index, movelist[z].mask_index);
-  }
-  */
-  if(first.array_index != -1){
-    for(i = 0; i < num_moves; i++){
-      if(first.array_index == movelist[i].array_index
-         && first.mask_index == movelist[i].mask_index){
-        movelist[i].info = 450000;
-        max_index = i;
-      } else {
-        movelist[i].info = score_move(board, movelist[i]);
-      }
-    }
-  }
-
-  else {
-    for(i = 0; i < num_moves; i++){
-      movelist[i].info = score_move(board, movelist[i]);
-      if(movelist[i].info > max){
-        max = movelist[i].info;
-        max_index = i;
-      }
-    }
-  }
-
-  if(max_index == -1) fatal_error(1, "No maximum\n");
 
   // put biggest at front
-  if(num_moves > 1) {
+  if (num_moves > 1) {
     Move tmp_move = movelist[max_index];
-    for(i = max_index; i > 0; i--)
+    for (int i = max_index; i > 0; i--)
       movelist[i] = movelist[i - 1];
     movelist[0] = tmp_move;
   }
 }
+
+bool MoveList::GenerateAllMoves(Board* board) {
+  stage_ = 1000000;
+  length_ = move_generator(*board, moves_);
+  assert(length_);
+  score_and_get_first(board, moves_, length_);
+  sort_moves(moves_, 1, length_);
+  return true;
+}
+
+bool MoveList::GenerateNextMoves(Board* board) {
+#ifdef TWO_STAGE_GENERATION
+  if (stage_ == 0) {
+    true_length_ = move_generator_stage1(*board, moves_);
+    stage_ = 1;
+    if(true_length_ == 0){
+      true_length_ = move_generator_stage2(*board, 0, moves_);
+      stage_ = 3;
+      assert(true_length_);
+    }
+    score_and_get_first(board, moves_, true_length_);
+    length_ = 1;
+    return true;
+  } else if (stage_ == 1) {
+    sort_moves(moves_, 1, true_length_);
+    length_ = true_length_;
+    stage_ = 2;
+    return true;
+  } else if (stage_ == 2) {
+    length_ = move_generator_stage2(*board, length_, moves_);
+    stage_ = 4;
+    return true;
+  } else if (stage_ == 3) {
+    sort_moves(moves_, 1, true_length_);
+    length_ = true_length_;
+    stage_ = 4;
+    return true;
+  }
+#else
+  if (stage_ == 0) {
+    length_ = 1;
+    true_length_ = move_generator(*board, moves_);
+    assert(true_length_);
+  
+    score_and_get_first(board, moves_, true_length_);
+    stage_ = 1;
+    return true;
+  } else if (stage_ == 1) {
+    sort_moves(moves_, 1, true_length_);
+    length_ = true_length_;
+    stage_ = 2;
+    return true;
+  }
+#endif
+  return false;
+}
+
+/* Optional sort method.
+bool wayToSort(Move i, Move j) { return i.info > j.info; }
+std::stable_sort(movelist, movelist+num_moves, wayToSort);
+std::__inplace_stable_sort(movelist, movelist+num_moves, wayToSort);
+*/
+
+}  // namespace obsequi
