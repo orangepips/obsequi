@@ -1,6 +1,9 @@
 #include "positional-values.h"
 
+#include <stdio.h>
 #include <stdlib.h>
+
+namespace obsequi {
 
 //=================================================================
 // Set the value of all the positions on the board.
@@ -70,6 +73,8 @@ void PositionalValues::Print() const {
   printf("\n");
 }
 
+}  // namespace obsequi
+
 #if 0
 //#################################################################
 // If we are using dynamic position values then these are the
@@ -126,4 +131,3 @@ unset_move_value    (Move move, s32bit player)
 */
 
 #endif
-

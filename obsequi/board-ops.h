@@ -1,8 +1,8 @@
 #ifndef OBSEQUI_BOARD_OPS_H
 #define OBSEQUI_BOARD_OPS_H
 
-#include "bitops.h"
 #include "base.h"
+#include "bitops.h"
 
 namespace obsequi {
 
@@ -33,4 +33,4 @@ static inline int count_total(const u32bit board[32], s32bit row) {
 }
 
 }  // namespace obsequi
-#endif  //OBSEQUI_BOARD_OPS_H
+#endif  // OBSEQUI_BOARD_OPS_H

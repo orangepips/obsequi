@@ -1,9 +1,9 @@
 // Count the number of bits set
 
-#ifndef POSITIONAL_VALUES_H
-#define POSITIONAL_VALUES_H
+#ifndef OBSEQUI_POSITIONAL_VALUES_H
+#define OBSEQUI_POSITIONAL_VALUES_H
 
-#include <stdio.h>
+namespace obsequi {
 
 class PositionalValues {
  public:
@@ -26,4 +26,5 @@ class PositionalValues {
   void operator=(const PositionalValues&);
 };
 
-#endif // POSITIONAL_VALUES_H
+}  // namespace obsequi
+#endif  // OBSEQUI_POSITIONAL_VALUES_H

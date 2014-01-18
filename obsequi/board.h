@@ -1,6 +1,6 @@
 // Class to handle the board state.
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef OBSEQUI_BOARD_H
+#define OBSEQUI_BOARD_H
 
 #include "base.h"
 #include "hash-table.h"
@@ -8,11 +8,10 @@
 
 #include <memory>
 
-class PositionalValues;
-
 namespace obsequi {
 
 class Move;
+class PositionalValues;
 
 // Basic board info which we keep track of.
 struct BasicInfo {
@@ -113,4 +112,4 @@ inline bool Board::IsGameOver(int* score) const {
 }
 
 }  // namespace obsequi
-#endif  // BOARD_H
+#endif  // OBSEQUI_BOARD_H

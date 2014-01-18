@@ -1,5 +1,5 @@
-#ifndef STATS_H
-#define STATS_H
+#ifndef OBSEQUI_STATS_H
+#define OBSEQUI_STATS_H
 
 #include "base.h"
 
@@ -31,5 +31,4 @@ class ObsequiStats {
 };
 
 }  // namespace obsequi
-
-#endif // STATS_H
+#endif  // OBSEQUI_STATS_H

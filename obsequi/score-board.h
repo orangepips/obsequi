@@ -1,5 +1,5 @@
-#ifndef SCORE_BOARD_H
-#define SCORE_BOARD_H
+#ifndef OBSEQUI_SCORE_BOARD_H
+#define OBSEQUI_SCORE_BOARD_H
 
 #include "base.h"
 
@@ -61,4 +61,4 @@ static inline bool is_game_over_expensive(
 }
 
 }  // namespace obsequi
-#endif  // SCORE_BOARD_H
+#endif  // OBSEQUI_SCORE_BOARD_H
