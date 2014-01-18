@@ -1,0 +1,55 @@
+package proto;
+
+enum Direction {
+  HORIZONTAL = 0;
+  VERTICAL = 1;
+}
+
+message Block {
+  optional int32 row = 1;
+  optional int32 col = 2;
+}
+
+message Board {
+  optional int32 rows = 1;
+  optional int32 cols = 2;
+  repeated Block blocks = 3;
+  optional Direction whos_turn = 4;
+}
+
+message ScoreMetrics {
+  optional int32 safe = 1;  // Safe moves
+  optional int32 opp_real = 14;  // Opponent total moves
+  optional int32 empty = 2;  // Empty squares
+
+  optional int32 prot = 3;  // Protective regions
+
+  optional int32 vuln2 = 4;  // Vulnerable moves (includes vuln_w_prot)
+  // Vuln moves with square unavailable to opponent
+  optional int32 vuln2_w_prot = 5;
+
+  optional int32 vuln1 = 6;  // Vulnerable moves (includes vuln_w_prot)
+  // Vuln moves with square unavailable to opponent
+  optional int32 vuln1_w_prot = 7;
+
+  // Squares unused in packing and unavailable to opponent
+  optional int32 unused = 8;
+
+  optional int32 safe_op2 = 9;  // Safe moves
+  optional int32 safe_op1 = 10;  // Safe moves
+  optional int32 safe_op0 = 11;  // Safe moves
+
+  optional int32 moves_lower_bound = 12;
+  optional int32 opp_moves_upper_bound = 13;
+  optional int32 opp_moves_upper_bound2 = 15;
+}
+
+message Request {
+  optional Board board = 1;
+}
+
+message Response {
+  optional int32 score = 1;
+  optional ScoreMetrics v_metrics = 2;
+  optional ScoreMetrics h_metrics = 3;
+}

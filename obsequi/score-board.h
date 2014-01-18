@@ -1,7 +1,11 @@
-#ifndef OBSEQUI_SCORE_BOARD_H
-#define OBSEQUI_SCORE_BOARD_H
+#ifndef SCORE_BOARD_H
+#define SCORE_BOARD_H
 
 #include "base.h"
+
+namespace proto {
+class ScoreMetrics;
+}
 
 namespace obsequi {
 
@@ -11,6 +15,7 @@ void score_board_curr_player(const Board& board, int *lower_bound,
                              int *upper_bound, int* upper_bound_real);
 void score_board_next_player(const Board& board, int *lower_bound,
                              int *upper_bound, int* upper_bound_real);
+void score_board_get_metrics(const Board& board, proto::ScoreMetrics* metrics);
 
 static inline bool is_game_over_expensive(
     const Board& curr, const Board& opponent, int* score) {
@@ -61,4 +66,4 @@ static inline bool is_game_over_expensive(
 }
 
 }  // namespace obsequi
-#endif  // OBSEQUI_SCORE_BOARD_H
+#endif  // SCORE_BOARD_H

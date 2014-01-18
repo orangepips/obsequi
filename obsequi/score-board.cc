@@ -1,7 +1,7 @@
 #include "score-board.h"
 
 #include <iostream>
-#include <string.h>
+#include "obsequi.pb.h"
 #include "board.h"
 #include "base.h"
 
@@ -403,6 +403,24 @@ void score_board_next_player(
   ScoreMetrics metrics;
   calculate_score_metrics(board, &metrics);
   calculate_move_bounds(&metrics, moves, opp_moves, opp_moves_real);
+}
+
+void score_board_get_metrics(const Board& board, proto::ScoreMetrics* metrics) {
+  ScoreMetrics score;
+  calculate_score_metrics(board, &score);
+
+  metrics->set_safe(score.safe);
+  metrics->set_opp_real(score.opp_real);
+  metrics->set_empty(score.empty);
+  metrics->set_prot(score.prot);
+  metrics->set_vuln2(score.vuln2);
+  metrics->set_vuln2_w_prot(score.vuln2_w_prot);
+  metrics->set_vuln1(score.vuln1);
+  metrics->set_vuln1_w_prot(score.vuln1_w_prot);
+  metrics->set_unused(score.unused);
+  metrics->set_safe_op2(score.safe_op2);
+  metrics->set_safe_op1(score.safe_op1);
+  metrics->set_safe_op0(score.safe_op0);
 }
 
 }  // namespace obsequi

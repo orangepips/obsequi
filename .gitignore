@@ -1,4 +1,13 @@
+# vim tmp files
 *.swp
 *.swo
+
+# Protobuf generated code
+obsequi.pb.*
+
+# tags file
 tags
+
+# Binaries
 Obsequi
+Server
