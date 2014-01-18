@@ -9,82 +9,27 @@
 //   and the zobrist values.
 //########################################################
 
-#define HASHCODEBITS 24
-
-#ifndef HASHCODEBITS
-#error "HASHCODEBITS must be defined.\n"
-#endif
-
-#if ! (HASHCODEBITS > 10 && HASHCODEBITS < 31)
-#error "Invalid value for HASHCODEBITS, it should be a value from 11 - 30."
-#endif
-
-#define HASHSIZE (1 << HASHCODEBITS)
-#define HASHMASK (HASHSIZE - 1)
-
-#define LOWER   0
-#define EXACT   1
-#define UPPER   2
-
 #define FLIP_NORMAL 0
 #define FLIP_VERT 1
 #define FLIP_HORZ 2
 #define FLIP_VERT_HORZ 3
-#define FLIP_TOTAL 4
 
 namespace obsequi {
-
-//########################################################
-// Info we need for each entry in the hashtable.
-//########################################################
-struct Hash_Entry {
-  // uniquely identifies a board position.
-  u64bit key[HASH_KEY_SIZE];
-
-  // NOTE: performance seems to be very sensitive on data size.
-
-  // if real num of nodes exceeds ULONG_MAX set to ULONG_MAX.
-  //   or maybe we could just shift the bits (larger granularity).
-  u32bit nodes;
-
-  // value of node determined with a search to `depth`.
-  s16bit value;
-
-  // uniquely identifies the previous best move for this position.
-  //u8bit mask_index;
-  //u8bit array_index;
-
-  // depth of the search when this value was determined.
-  u8bit depth : 6;
-
-  // value of node determined with a search to `depth`.
-  u8bit type : 2; //UPPER, LOWER, EXACT.
-};
-
-
-//========================================================
-// Global variables.
-//========================================================
-// zobrist value for each position on the board.
-u32bit* g_zobrist;
-
-// Transposition table.
-Hash_Entry* g_trans_table;
-
 
 // ##################################################################
 // Zobrist functionality.
 // ##################################################################
-u32bit get_zobrist_value(int row, int col) {
-  if (!g_zobrist) {
-    g_zobrist = new u32bit[32*32];
-    srandom(1);
-    for (int i = 0; i < 32*32; i++) {
-      g_zobrist[i] = random() & HASHMASK;
-    }
-  }
+u32bit zobrist[32 * 32];
 
-  return g_zobrist[(row+1) * 32 + (col+1)];
+void __attribute__ ((constructor)) init_zobrist() {
+  srandom(1);
+  for (int i = 0; i < 32*32; i++) {
+    zobrist[i] = random();
+  }
+}
+
+u32bit get_zobrist_value(int row, int col) {
+  return zobrist[(row+1) * 32 + (col+1)];
 }
 
 // ##################################################################
@@ -124,27 +69,20 @@ void HashKeys::Print() const {
 }
 
 // ##################################################################
-// init_hashtable
-// ##################################################################
-void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
-  // Initialize trans_table
-  g_trans_table = new Hash_Entry[HASHSIZE];
-}
-
-
-// ##################################################################
 // print_hashentry
 // ##################################################################
 void print_hashentry(s32bit index) {
-  Hash_Entry entry = g_trans_table[index];
+  //Hash_Entry entry = g_trans_table[index];
 
   printf("Hash entry: %d.\n", index);
+  /*
   printf(" Key:%8lX:%8lX, n:%u, d:%d, w:%d"
          ", v:%d, t:%d, int:%d,%d.\n",
          entry.key[0], entry.key[1],
-         entry.nodes, entry.depth, 0, //entry.whos_turn,
-         entry.value, entry.type,
+         entry.nodes, // entry.depth, 0, //entry.whos_turn,
+         entry.value, // entry.type,
          0, 0);//entry.mask_index, entry.array_index);
+         */
 }
 
 
@@ -235,80 +173,50 @@ check_hash_code_sanity(const HashKeys& keys) {
 }
 
 
-//########################################################
-// hashstore
-//########################################################
-void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
-               u32bit nodes, s32bit depth, const Move& best) {
-  for (int i = 0; i < FLIP_TOTAL; i++) {
-    int index = keys.mod[i].code;
-    Hash_Entry* entry = &g_trans_table[index];
+// Transposition table.
+TranspositionTable* trans_table;
+
+TranspositionTable::TranspositionTable(int bits) {
+  int hash_size = (1 << bits);
+  mask = hash_size - 1;
+
+  // Initialize trans_table
+  table = new HashEntry[hash_size];
+  memset(table, 0, sizeof(table[0]) * hash_size);
+}
+
+void TranspositionTable::Store(const HashKeys& keys, u8bit depth,
+                               u32bit nodes, int value) {
+  for (int i = 0; i < HashKeys::FLIP_TOTAL; i++) {
+    int index = keys.mod[i].code & mask;
+    HashEntry* entry = &table[index];
 
     if(entry->nodes <= nodes){
       entry->key[0] = keys.mod[i].key[0];
       entry->key[1] = keys.mod[i].key[1];
       entry->nodes = nodes;
-      //entry->mask_index = best.mask_index;
-      //entry->array_index = best.array_index;
       entry->depth = depth;
       entry->value = value;
-      if (value>=beta) entry->type = LOWER;
-      else if (value>alpha) entry->type = EXACT;
-      else entry->type = UPPER;
       // Only store a result once.
       return;
     }
   }
 }
 
+bool TranspositionTable::Lookup(const HashKeys& keys, u8bit depth,
+                                int *value) {
+  for (int i = 0; i < HashKeys::FLIP_TOTAL; i++) {
+    int index = keys.mod[i].code & mask;
+    HashEntry* entry = &table[index];
 
-//########################################################
-// hashlookup
-//########################################################
-int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
-               s32bit depth_remaining, Move *force_first) {
-  for (int i = 0; i < FLIP_TOTAL; i++) {
-    int index = keys.mod[i].code;
-    Hash_Entry* entry = &g_trans_table[index];
-
+    /* found matching entry.*/
     if (entry->key[0] == keys.mod[i].key[0] &&
         entry->key[1] == keys.mod[i].key[1]) {
-      /* found matching entry.*/
-  
-      /* If nothing else we can use this entry to give us a good move. */
-      //force_first->mask_index = entry->mask_index;
-      //force_first->array_index = entry->array_index;
   
       /* use value if depth >= than the depth remaining in our search. */
-      if(entry->depth >= depth_remaining) {
-  
-        /* if the value is exact we can use it. */
-        if(entry->type == EXACT) {
-          *value=entry->value;
-          return 1;
-        }
-  
-        /* if value is a lower bound we can possibly use it. */
-        if(entry->type == LOWER) {
-          if(entry->value>=(*beta)){
-            *value=entry->value;
-            return 1;
-          }
-          if(entry->value>(*alpha)){
-            *alpha=entry->value;
-          }
-        }
-  
-        /* if value is a upper bound we can possibly use it. */
-        if(entry->type == UPPER) {
-          if(entry->value<=(*alpha)){
-            *value=entry->value;
-            return 1;
-          }
-          if(entry->value<(*beta)){
-            *beta=entry->value;
-          }
-        }
+      if(entry->depth >= depth) {
+        *value=entry->value;
+        return 1;
       }
     }
   }

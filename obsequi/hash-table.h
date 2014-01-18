@@ -1,23 +1,20 @@
-#ifndef HASH_TABLE_H
-#define HASH_TABLE_H
+#ifndef OBSEQUI_HASH_TABLE_H
+#define OBSEQUI_HASH_TABLE_H
 
-#include "move.h"
 #include "base.h"
-
-// 64 bits * 2 - Can handle boards with 128 positions
-#define HASH_KEY_SIZE 2
-
-// 4 ways we can flip the board: none, vert, horz, and vert/horz.
-#define FLIP_TOTAL 4
 
 namespace obsequi {
 
+// 64 bits * 2 - Can handle boards with 128 positions
+const int KEY_SIZE = 2;
+
 struct HashKey {
-  u64bit key[HASH_KEY_SIZE];
+  u64bit key[KEY_SIZE];
   u32bit code;
 };
 
-struct HashKeys {
+class HashKeys {
+ public:
   void Init(int num_rows, int num_cols);
   void Toggle(int bit);
 
@@ -25,31 +22,59 @@ struct HashKeys {
 
   void Xor(const HashKeys& move) {
     for (int i = 0; i < FLIP_TOTAL; i++) {
-      for (int j = 0; j < HASH_KEY_SIZE; j++) {
+      for (int j = 0; j < KEY_SIZE; j++) {
         this->mod[i].key[j] ^= move.mod[i].key[j];
       }
       this->mod[i].code ^= move.mod[i].code;
     }
   }
 
+  // 4 ways we can flip the board: none, vert, horz, and vert/horz.
+  static const int FLIP_TOTAL = 4;
+  HashKey mod[FLIP_TOTAL];
+
+ private:
   int num_rows;
   int num_cols;
-  HashKey mod[FLIP_TOTAL];
 };
 
-u32bit get_zobrist_value(int row, int col);
+struct HashEntry {
+  u64bit key[KEY_SIZE];
 
-void init_hashtable(s32bit num_rows, s32bit num_cols, s32bit board[30][30]);
+  // NOTE: performance seems to be very sensitive on data size.
 
+  // if real num of nodes exceeds ULONG_MAX set to ULONG_MAX.
+  //   or maybe we could just shift the bits (larger granularity).
+  u32bit nodes;
+
+  // value of node determined with a search to `depth`.
+  s16bit value;
+
+  // depth of the search when this value was determined.
+  u8bit depth;
+};
+
+class TranspositionTable {
+ public:
+  TranspositionTable(int bits);
+
+  void Store(const HashKeys& keys, u8bit depth_remaining, u32bit nodes,
+             int value);
+
+  bool Lookup(const HashKeys& keys, u8bit depth_remaining, int *value);
+
+  // void Stats();
+
+ private:
+  u32bit mask;
+  HashEntry* table;
+};
+
+// TODO: Get rid of this global variable.
+extern TranspositionTable* trans_table;
+
+// TODO: Get this to work and move it into the HashKeys class.
 void check_hash_code_sanity(const HashKeys& keys);
 
-void hashstore(const HashKeys& keys, s32bit value, s32bit alpha, s32bit beta,
-               u32bit nodes, s32bit depth_remaining,
-               const Move& best);
-
-int hashlookup(const HashKeys& keys, s32bit *value, s32bit *alpha, s32bit *beta,
-               s32bit depth_remaining,
-               Move *force_first);
-
 }  // namespace obsequi
-#endif // HASH_TABLE_H
+#endif  // OBSEQUI_HASH_TABLE_H

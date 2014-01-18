@@ -121,11 +121,10 @@ search_for_move(Board* curr, ObsequiStats* stats, int *row, int *col) {
 //=================================================================
 // Negamax Function.
 //=================================================================
-static int negamax(int depth, int remaining, Board* curr, ObsequiStats* stats,
+static int negamax(int depth, int remaining,
+                   Board* curr, ObsequiStats* stats,
                    int alpha, int beta) {
   int value;
-  int init_alpha = alpha, init_beta = beta;
-  Move   forcefirst;
   ObsequiLevelStats* level_stats = &stats->level_[depth];
 
   // increment a couple of stats
@@ -160,14 +159,10 @@ static int negamax(int depth, int remaining, Board* curr, ObsequiStats* stats,
   //------------------------------------------
   // check transposition table
   //------------------------------------------
-  forcefirst.array_index = -1;
-  if (hashlookup(curr->GetHashKeys(), &value, &alpha, &beta, remaining,
-                 &forcefirst)) {
+  if (trans_table->Lookup(curr->GetHashKeys(), remaining, &value)) {
     level_stats->cut_transp_++;
     return value;
   }
-  // since we aren't using iter deep not interested in forcefirst.
-  forcefirst.array_index = -1;
 
 
   //------------------------------------------
@@ -229,9 +224,8 @@ static int negamax(int depth, int remaining, Board* curr, ObsequiStats* stats,
   }
 
   // save the position in the hashtable
-  hashstore(curr->GetHashKeys(), alpha, init_alpha, init_beta,
-            (stats->node_count_ - start_nodes) >> 5,
-            remaining, best);
+  trans_table->Store(curr->GetHashKeys(), remaining,
+            (stats->node_count_ - start_nodes) >> 5, alpha);
 
   return alpha;
 }

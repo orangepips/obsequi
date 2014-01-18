@@ -61,6 +61,7 @@ static void   get_solve_command   ();
 static void   get_solve_command_from_lock_file();
 static void   write_to_lock_file(char winner, const char* num_nodes);
 
+#define HASHCODEBITS 24
 
 //########################################################
 // Global variables.
@@ -190,7 +191,7 @@ void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
   printf("\n");
   horz->PrintInfo();
 
-  obsequi::init_hashtable(num_rows, num_cols, board);
+  obsequi::trans_table = new obsequi::TranspositionTable(HASHCODEBITS);
   check_hash_code_sanity(horz->GetHashKeys());
 }
 

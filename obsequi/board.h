@@ -4,6 +4,7 @@
 
 #include "base.h"
 #include "hash-table.h"
+#include "move.h"
 
 #include <memory>
 
