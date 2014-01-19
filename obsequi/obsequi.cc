@@ -34,10 +34,10 @@
 #include <sys/time.h>
 #include <ctype.h>
 
-#include "negamax.h"
 #include "board.h"
-#include "hash-table.h"
+#include "negamax.h"
 #include "stats.h"
+#include "transposition.h"
 
 //########################################################
 // Function templates.

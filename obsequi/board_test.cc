@@ -32,9 +32,9 @@ TEST(MoveOrdering) {
   const HashKeys keys2 = c.GetHashKeys();
 
   for (int i = 0; i < 4; i++) {
-    assert(keys1.mod[i].code == keys2.mod[i].code);
-    assert(keys1.mod[i].key[0] == keys2.mod[i].key[0]);
-    assert(keys1.mod[i].key[1] == keys2.mod[i].key[1]);
+    assert(keys1.GetKeys()[i].code == keys2.GetKeys()[i].code);
+    assert(keys1.GetKeys()[i].key[0] == keys2.GetKeys()[i].key[0]);
+    assert(keys1.GetKeys()[i].key[1] == keys2.GetKeys()[i].key[1]);
   }
 
   // c.Print();
@@ -64,12 +64,12 @@ TEST(MovePlayer) {
 
   for (int i = 0; i < 4; i++) {
     // printf("Iter: %d\n", i);
-    // printf("code: 0x%X   key: 0x%lX 0x%lX\n", keys1.mod[i].code,
-    //        keys1.mod[i].key[0], keys1.mod[i].key[1]);
-    // printf("code: 0x%X   key: 0x%lX 0x%lX\n", keys2.mod[i].code,
-    //        keys2.mod[i].key[0], keys2.mod[i].key[1]);
-    assert(keys1.mod[i].code == keys2.mod[i].code);
-    assert(keys1.mod[i].key[0] == keys2.mod[i].key[0]);
-    assert(keys1.mod[i].key[1] == keys2.mod[i].key[1]);
+    // printf("code: 0x%X   key: 0x%lX 0x%lX\n", keys1.GetKeys()[i].code,
+    //        keys1.GetKeys()[i].key[0], keys1.GetKeys()[i].key[1]);
+    // printf("code: 0x%X   key: 0x%lX 0x%lX\n", keys2.GetKeys()[i].code,
+    //        keys2.GetKeys()[i].key[0], keys2.GetKeys()[i].key[1]);
+    assert(keys1.GetKeys()[i].code == keys2.GetKeys()[i].code);
+    assert(keys1.GetKeys()[i].key[0] == keys2.GetKeys()[i].key[0]);
+    assert(keys1.GetKeys()[i].key[1] == keys2.GetKeys()[i].key[1]);
   }
 }

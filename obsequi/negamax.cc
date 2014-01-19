@@ -1,11 +1,12 @@
 #include "negamax.h"
 
-#include <stdio.h>
 #include "board.h"
-#include "hash-table.h"
 #include "move.h"
 #include "score-board.h"
 #include "stats.h"
+#include "transposition.h"
+
+#include <stdio.h>
 
 namespace obsequi {
 

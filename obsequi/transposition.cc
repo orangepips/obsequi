@@ -1,18 +1,11 @@
-#include "hash-table.h"
+#include "transposition.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstring>
 
 //########################################################
 // Constants used in conjuction with the transposition table
 //   and the zobrist values.
 //########################################################
-
-#define FLIP_NORMAL 0
-#define FLIP_VERT 1
-#define FLIP_HORZ 2
-#define FLIP_VERT_HORZ 3
 
 namespace obsequi {
 
@@ -35,7 +28,12 @@ u32bit get_zobrist_value(int row, int col) {
 // ##################################################################
 // HashKeys class.
 // ##################################################################
-static void fill_in_hash_code(HashKey *info, int num_cols, int bit) {
+#define FLIP_NORMAL 0
+#define FLIP_VERT 1
+#define FLIP_HORZ 2
+#define FLIP_VERT_HORZ 3
+
+static inline void fill_in_hash_code(HashKey* info, int num_cols, int bit) {
   int r = bit / num_cols;
   int c = bit % num_cols;
   info->code ^= get_zobrist_value(r, c);
@@ -43,28 +41,28 @@ static void fill_in_hash_code(HashKey *info, int num_cols, int bit) {
 }
 
 void HashKeys::Toggle(int bit) {
-  int row = bit / num_cols;
-  int col = bit % num_cols;
+  int row = bit / num_cols_;
+  int col = bit % num_cols_;
 
-  fill_in_hash_code(&mod[FLIP_NORMAL], num_cols, bit);
-  fill_in_hash_code(&mod[FLIP_VERT], num_cols,
-      (row*num_cols)+(num_cols - col - 1));
-  fill_in_hash_code(&mod[FLIP_HORZ], num_cols,
-      ((num_rows - row - 1) * num_cols) + col);
-  fill_in_hash_code(&mod[FLIP_VERT_HORZ], num_cols,
-      ( ((num_rows - row - 1) * num_cols) + (num_cols - col - 1) ));
+  fill_in_hash_code(&keys_[FLIP_NORMAL], num_cols_, bit);
+  fill_in_hash_code(&keys_[FLIP_VERT], num_cols_,
+      (row * num_cols_) + (num_cols_ - col - 1));
+  fill_in_hash_code(&keys_[FLIP_HORZ], num_cols_,
+      ((num_rows_ - row - 1) * num_cols_) + col);
+  fill_in_hash_code(&keys_[FLIP_VERT_HORZ], num_cols_,
+      ( ((num_rows_ - row - 1) * num_cols_) + (num_cols_ - col - 1) ));
 }
 
-void HashKeys::Init(int num_rowsx, int num_colsx) {
-  num_rows = num_rowsx;
-  num_cols = num_colsx;
-  memset(mod, 0, sizeof(mod));
+void HashKeys::Init(int num_rows, int num_cols) {
+  num_rows_ = num_rows;
+  num_cols_ = num_cols;
+  memset(keys_, 0, sizeof(keys_));
 }
 
 void HashKeys::Print() const {
   for (int i = 0; i < FLIP_TOTAL; i++) {
     printf("Dir: %d, Key: %8lX:%8lX, Code: %8X.\n",
-           i, mod[i].key[0], mod[i].key[1], mod[i].code);
+           i, keys_[i].key[0], keys_[i].key[1], keys_[i].code);
   }
 }
 
@@ -178,22 +176,25 @@ TranspositionTable* trans_table;
 
 TranspositionTable::TranspositionTable(int bits) {
   int hash_size = (1 << bits);
-  mask = hash_size - 1;
+  mask_ = hash_size - 1;
 
   // Initialize trans_table
-  table = new HashEntry[hash_size];
-  memset(table, 0, sizeof(table[0]) * hash_size);
+  table_.reset(new HashEntry[hash_size]);
+  memset(table_.get(), 0, sizeof(table_[0]) * hash_size);
 }
 
-void TranspositionTable::Store(const HashKeys& keys, u8bit depth,
+void TranspositionTable::Store(const HashKeys& hash_keys, u8bit depth,
                                u32bit nodes, int value) {
+  const HashKey* keys = hash_keys.GetKeys();
   for (int i = 0; i < HashKeys::FLIP_TOTAL; i++) {
-    int index = keys.mod[i].code & mask;
-    HashEntry* entry = &table[index];
+    int index = keys[i].code & mask_;
+    HashEntry* entry = &table_[index];
 
+    // TODO: We should try finding the minimum and replacing that one, instead
+    // of just the first one.
     if(entry->nodes <= nodes){
-      entry->key[0] = keys.mod[i].key[0];
-      entry->key[1] = keys.mod[i].key[1];
+      entry->key[0] = keys[i].key[0];
+      entry->key[1] = keys[i].key[1];
       entry->nodes = nodes;
       entry->depth = depth;
       entry->value = value;
@@ -203,15 +204,15 @@ void TranspositionTable::Store(const HashKeys& keys, u8bit depth,
   }
 }
 
-bool TranspositionTable::Lookup(const HashKeys& keys, u8bit depth,
-                                int *value) {
+bool TranspositionTable::Lookup(const HashKeys& hash_keys, u8bit depth,
+                                int* value) {
+  const HashKey* keys = hash_keys.GetKeys();
   for (int i = 0; i < HashKeys::FLIP_TOTAL; i++) {
-    int index = keys.mod[i].code & mask;
-    HashEntry* entry = &table[index];
+    int index = keys[i].code & mask_;
+    HashEntry* entry = &table_[index];
 
     /* found matching entry.*/
-    if (entry->key[0] == keys.mod[i].key[0] &&
-        entry->key[1] == keys.mod[i].key[1]) {
+    if (entry->key[0] == keys[i].key[0] && entry->key[1] == keys[i].key[1]) {
   
       /* use value if depth >= than the depth remaining in our search. */
       if(entry->depth >= depth) {

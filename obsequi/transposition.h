@@ -1,7 +1,9 @@
-#ifndef OBSEQUI_HASH_TABLE_H
-#define OBSEQUI_HASH_TABLE_H
+#ifndef OBSEQUI_TRANSPOSITION_H
+#define OBSEQUI_TRANSPOSITION_H
 
 #include "base.h"
+
+#include <memory>
 
 namespace obsequi {
 
@@ -18,24 +20,26 @@ class HashKeys {
   void Init(int num_rows, int num_cols);
   void Toggle(int bit);
 
-  void Print() const;
-
-  void Xor(const HashKeys& move) {
+  void Xor(const HashKeys& hash_key) {
     for (int i = 0; i < FLIP_TOTAL; i++) {
       for (int j = 0; j < KEY_SIZE; j++) {
-        this->mod[i].key[j] ^= move.mod[i].key[j];
+        this->keys_[i].key[j] ^= hash_key.keys_[i].key[j];
       }
-      this->mod[i].code ^= move.mod[i].code;
+      this->keys_[i].code ^= hash_key.keys_[i].code;
     }
   }
 
+  const HashKey* GetKeys() const { return keys_; }
+
+  void Print() const;
+
   // 4 ways we can flip the board: none, vert, horz, and vert/horz.
   static const int FLIP_TOTAL = 4;
-  HashKey mod[FLIP_TOTAL];
 
  private:
-  int num_rows;
-  int num_cols;
+  int num_rows_;
+  int num_cols_;
+  HashKey keys_[FLIP_TOTAL];
 };
 
 struct HashEntry {
@@ -58,16 +62,14 @@ class TranspositionTable {
  public:
   TranspositionTable(int bits);
 
-  void Store(const HashKeys& keys, u8bit depth_remaining, u32bit nodes,
-             int value);
-
-  bool Lookup(const HashKeys& keys, u8bit depth_remaining, int *value);
+  void Store(const HashKeys& keys, u8bit depth, u32bit nodes, int value);
+  bool Lookup(const HashKeys& keys, u8bit depth, int *value);
 
   // void Stats();
 
  private:
-  u32bit mask;
-  HashEntry* table;
+  u32bit mask_;
+  std::unique_ptr<HashEntry[]> table_;
 };
 
 // TODO: Get rid of this global variable.
@@ -77,4 +79,4 @@ extern TranspositionTable* trans_table;
 void check_hash_code_sanity(const HashKeys& keys);
 
 }  // namespace obsequi
-#endif  // OBSEQUI_HASH_TABLE_H
+#endif  // OBSEQUI_TRANSPOSITION_H

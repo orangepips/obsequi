@@ -3,8 +3,8 @@
 #define OBSEQUI_BOARD_H
 
 #include "base.h"
-#include "hash-table.h"
 #include "move.h"
+#include "transposition.h"
 
 #include <memory>
 

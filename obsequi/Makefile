@@ -24,14 +24,14 @@ tests: $(TESTS:%.cc=objs/%)
 
 # Domineering Solver, commandline controlled
 O_OBJSX= obsequi.o base.o board.o negamax.o positional-values.o \
-	move.o hash-table.o stats.o bitops.o score-board.o
+	move.o transposition.o stats.o bitops.o score-board.o
 O_OBJS= $(addprefix objs/,$(O_OBJSX))
 Obsequi: $(O_OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@
 
 # Domineering Solver, with HTML UI
 S_OBJSX= main.o base.o protoson.o http.o server.o obsequi.pb.o \
-	board.o positional-values.o hash-table.o \
+	board.o positional-values.o transposition.o \
 	score-board.o bitops.o
 S_OBJS= $(addprefix objs/,$(S_OBJSX))
 Server: $(S_OBJS)
@@ -40,9 +40,9 @@ Server: $(S_OBJS)
 # Tests
 objs/bitops_test: bitops_test.cc objs/bitops.o
 objs/board_test: board_test.cc objs/move.o objs/board.o objs/bitops.o \
-    objs/base.o objs/hash-table.o objs/positional-values.o
+    objs/base.o objs/transposition.o objs/positional-values.o
 objs/move_test: move_test.cc objs/move.o objs/board.o objs/bitops.o \
-    objs/base.o objs/hash-table.o objs/positional-values.o
+    objs/base.o objs/transposition.o objs/positional-values.o
 
 # List of implicit rules
 %.pb.cc %.pb.h : %.proto
