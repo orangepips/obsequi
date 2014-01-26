@@ -1,7 +1,6 @@
 #include "positional-values.h"
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
 
 namespace obsequi {
 

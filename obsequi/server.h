@@ -22,7 +22,6 @@ typedef void (*ConnectionHandler)(const TcpConnection& conn);
 class TcpServer {
  public:
   TcpServer(ConnectionHandler handler);
-  ~TcpServer() {}
 
   // Never returns.
   void Run(int port, int num_worker_threads);

@@ -10,7 +10,6 @@
 
 namespace obsequi {
 
-class Move;
 class PositionalValues;
 
 // Basic board info which we keep track of.

@@ -8,7 +8,7 @@
 #include <thread>
 #include <queue>
 #include <vector>
-#include <string.h>
+#include <cstring>
 
 #include <sys/socket.h>
 #include <sys/types.h>

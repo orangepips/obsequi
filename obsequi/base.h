@@ -1,7 +1,7 @@
 #ifndef OBSEQUI_BASE_H
 #define OBSEQUI_BASE_H
 
-#include <inttypes.h>
+#include <cinttypes>
 
 // Some base types for when you want a very specific size.
 typedef uint8_t u8bit;
