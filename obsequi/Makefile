@@ -62,7 +62,7 @@ objs/%_x.o : %.cc
 
 objs/%_test : %_test.cc
 	$(CC) $(CPPFLAGS) $(CFLAGS) $^ -o $@
-	valgrind --leak-check=full ./$@
+	valgrind --error-exitcode=1 --leak-check=full ./$@
 
 ## other stuff
 .PHONY: clean
