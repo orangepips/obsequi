@@ -61,8 +61,6 @@ static void   get_solve_command   ();
 static void   get_solve_command_from_lock_file();
 static void   write_to_lock_file(char winner, const char* num_nodes);
 
-#define HASHCODEBITS 24
-
 //########################################################
 // Global variables.
 //########################################################
@@ -136,6 +134,16 @@ main(int argc, char** argv)
     char buffer[80];
     num_nodes = u64bit_to_string(g_stats.node_count_, buffer);
 
+    if (whos_turn == HORIZONTAL) {
+      printf("solve rows %d cols %d bits %d H\n",
+             curr->GetNumRows(), curr->GetOpponent()->GetNumRows(),
+             obsequi::trans_table->GetBits());
+    } else {
+      printf("solve rows %d cols %d bits %d V\n",
+             curr->GetOpponent()->GetNumRows(), curr->GetNumRows(),
+             obsequi::trans_table->GetBits());
+    }
+
     // print results.
     if(score >= 5000){
       printf("winner %c, move (%d,%d), nodes %s.\n",
@@ -174,7 +182,8 @@ main(int argc, char** argv)
 //=================================================================
 // Print the statistics which we have gathered.
 //=================================================================
-void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
+void initialize_board(s32bit num_rows, s32bit num_cols, int hashcodebits,
+                      s32bit board[30][30]) {
   obsequi::Board* horz = new obsequi::Board(num_rows, num_cols);
   g_boardx[HORIZONTAL] = horz;
   g_boardx[VERTICAL] = horz->GetOpponent();
@@ -191,7 +200,7 @@ void initialize_board(s32bit num_rows, s32bit num_cols, s32bit board[30][30]) {
   printf("\n");
   horz->PrintInfo();
 
-  obsequi::trans_table = new obsequi::TranspositionTable(HASHCODEBITS);
+  obsequi::trans_table = new obsequi::TranspositionTable(hashcodebits);
   check_hash_code_sanity(horz->GetHashKeys());
 }
 
@@ -224,6 +233,7 @@ get_solve_command()
   // Board info for the board which we are solving.
   int num_rows;
   int num_cols;
+  int hashcodebits;
   s32bit board[30][30];
   char   c1, c2;
 
@@ -238,10 +248,10 @@ get_solve_command()
     } else continue;
     line[len - 1] = 0;
 
-    t = sscanf(line, "solve rows %u cols %u %c%s %c",
-               &num_rows, &num_cols, &c1, blocks, &c2);
+    t = sscanf(line, "solve rows %u cols %u bits %u %c%s %c",
+               &num_rows, &num_cols, &hashcodebits, &c1, blocks, &c2);
 
-    if(t != 3 && t != 5){
+    if(t != 4 && t != 6){
       fprintf(stderr, "Invalid command: '%s'.\n", line);
       continue;
     }
@@ -256,6 +266,11 @@ get_solve_command()
       continue;
     }
 
+    if (hashcodebits < 15 || hashcodebits > 31) {
+      fprintf(stderr, "bits must be between 15 and 31 inclusive.\n");
+      continue;
+    }
+
     if(num_cols * num_rows > 256){
       fprintf(stderr,
               "Search space too large: %u > 256.\n", num_cols*num_rows);
@@ -265,7 +280,7 @@ get_solve_command()
     for(r = 0; r < 30; r++)
       for(c = 0; c < 30; c++) board[r][c] = 0;
 
-    if(t == 5) {
+    if(t == 6) {
       char *tok;
 
       c1 = toupper(c1);
@@ -320,7 +335,7 @@ get_solve_command()
   */
   main_whos_turn = c2;
 
-  initialize_board(num_rows, num_cols, board);
+  initialize_board(num_rows, num_cols, hashcodebits, board);
 
   free(line);
   free(blocks);
@@ -664,7 +679,7 @@ get_solve_command_from_lock_file()
   else if(player == 'H') main_whos_turn = 'V';
   else  fatal_error(1, "Invalid player.\n");
 
-  initialize_board(num_rows, num_cols, board);
+  initialize_board(num_rows, num_cols, 24, board);
 
   free(line);
 

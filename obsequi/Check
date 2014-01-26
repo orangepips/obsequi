@@ -7,7 +7,7 @@
 ECHOFILE=.echo1
 
 function stats () {
-    echo "solve rows $1 cols $2 V" | time ./Obsequi -b >>$ECHOFILE 2>>$ECHOFILE
+    echo "solve rows $1 cols $2 bits 24 V" | time ./Obsequi -b >>$ECHOFILE 2>>$ECHOFILE
 }
 
 if [ $# -ne 0 ]
@@ -24,7 +24,7 @@ fi
 
 function func () {
 
-    echo "solve rows $1 cols $2 V" | ./Obsequi  >.out 2>/dev/null
+    echo "solve rows $1 cols $2 bits 24 V" | ./Obsequi  >.out 2>/dev/null
 
     if [ $? -ne 0 ]
     then

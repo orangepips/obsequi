@@ -10,11 +10,10 @@ libraries. (I use gcc and glibc).
 
 There isn't really any documentation for obsequi (sorry).
 
-To get it to solve an 8x8 board use:
-echo "solve rows 8 cols 8 V" | ./Obsequi
+To solve an 8x8 board with a transposition table with (1 << 24) entries use:
+echo "solve rows 8 cols 8 bits 24 V" | ./Obsequi
 
 You can also pre-place blocks on the board.
+echo "solve rows 8 cols 8 bits 24 b0,1;1,1 V" | ./Obsequi
+
 The V says it is verticals turn first.
-There are a number of run time options and compile time options, the
-compile time options are in cppflags.raw (don't change the other cppflags*
-files they are automatically changed.)

@@ -65,10 +65,12 @@ class TranspositionTable {
   void Store(const HashKeys& keys, u8bit depth, u32bit nodes, int value);
   bool Lookup(const HashKeys& keys, u8bit depth, int *value);
 
+  int GetBits() const;
   // void Stats();
 
  private:
   u32bit mask_;
+  int bits_;
   std::unique_ptr<HashEntry[]> table_;
 };
 

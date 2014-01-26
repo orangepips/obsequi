@@ -176,11 +176,16 @@ TranspositionTable* trans_table;
 
 TranspositionTable::TranspositionTable(int bits) {
   int hash_size = (1 << bits);
+  bits_ = bits;
   mask_ = hash_size - 1;
 
   // Initialize trans_table
   table_.reset(new HashEntry[hash_size]);
   memset(table_.get(), 0, sizeof(table_[0]) * hash_size);
+}
+
+int TranspositionTable::GetBits() const {
+  return bits_;
 }
 
 void TranspositionTable::Store(const HashKeys& hash_keys, u8bit depth,
