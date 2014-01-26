@@ -18,6 +18,11 @@ struct Move {
 class MoveList {
  public:
   MoveList() : curr_(-1), length_(0), stage_(0) {}
+  void Clear() {
+    curr_ = -1;
+    length_ = 0;
+    stage_ = 0;
+  }
 
   // Possibly generate moves in stages (will score and sort each stage as it
   // is generated.) Return nullptr when there are no more moves.

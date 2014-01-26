@@ -10,6 +10,8 @@
 
 namespace obsequi {
 
+MoveList g_movelist[100];
+
 //#################################################################
 // Negamax and driver functions. (and function prototype).
 //#################################################################
@@ -21,7 +23,7 @@ static int negamax(int depth, int remaining, Board* curr, ObsequiStats* stats,
 //=================================================================
 extern int
 search_for_move(Board* curr, ObsequiStats* stats, int *row, int *col) {
-  int  i, value = 0;
+  int value = 0;
 
   // Can we already determine a winner?
   int rv;
@@ -30,8 +32,9 @@ search_for_move(Board* curr, ObsequiStats* stats, int *row, int *col) {
     return rv;
   }
 
-  MoveList movelist;
-  movelist.GenerateAllMoves(curr);
+  MoveList* movelist = &g_movelist[0];
+  movelist->Clear();
+  movelist->GenerateAllMoves(curr);
 
   // Really this is for iterative deepening.
   for (int d = 1; d < 50; d += 44) {
@@ -43,8 +46,9 @@ search_for_move(Board* curr, ObsequiStats* stats, int *row, int *col) {
     *stats = ObsequiStats();
 
     // iterate through all the possible moves.
-    for (i = 0; i < movelist.Size(); i++) {
-      Move& move = movelist[i];
+    int i;
+    for (i = 0; i < movelist->Size(); i++) {
+      Move& move = (*movelist)[i];
       //set_position_values();
 
       //curr->position->Print();
@@ -80,8 +84,8 @@ search_for_move(Board* curr, ObsequiStats* stats, int *row, int *col) {
 
     if (value >= 5000) {
       printf("Winner found: %d.\n", value);
-      *row = movelist[i].array_index;
-      *col = movelist[i].mask_index;
+      *row = (*movelist)[i].array_index;
+      *col = (*movelist)[i].mask_index;
 
       stats->PrintStats();
 
@@ -175,14 +179,15 @@ static int negamax(int depth, int remaining,
   }
 
   const Move* m;
-  MoveList movelist;
-  Move best = movelist[0];
+  MoveList* movelist = &g_movelist[depth];
+  movelist->Clear();
+  Move best = (*movelist)[0];
 
-  while ((m = movelist.GetNext(curr)) != nullptr) {
+  while ((m = movelist->GetNext(curr)) != nullptr) {
     u64bit poor_move_cost = stats->node_count_ - start_nodes;
 
     // A few statistics
-    level_stats->curr_move_ = movelist.Index();
+    level_stats->curr_move_ = movelist->Index();
 
     curr->ApplyMove(*m);
     value = -negamax(depth+1, remaining-1, curr->GetOpponent(), stats,
@@ -195,8 +200,8 @@ static int negamax(int depth, int remaining,
       best  = *m;
 
       level_stats->win_count_++;
-      if (movelist.Index() < 5) {
-        level_stats->win_move_[movelist.Index()]++;
+      if (movelist->Index() < 5) {
+        level_stats->win_move_[movelist->Index()]++;
       } else {
         level_stats->win_move_[5]++;
       }
