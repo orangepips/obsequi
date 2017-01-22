@@ -2,7 +2,7 @@ CC=g++
 CPPFLAGS= -std=c++11
 
 # Lots of warnings and make them all errors.
-CPPFLAGS+= -Wall -Werror -Wshadow
+# CPPFLAGS+= -Wall -Werror -Wshadow
 
 # Turn on profiling.
 # Run Obsequi
@@ -13,7 +13,7 @@ CPPFLAGS+= -Wall -Werror -Wshadow
 CPPFLAGS += -O3 -march=native
 
 # Create better debug symbols.
-CPPFLAGS += -g -rdynamic
+CPPFLAGS += -g #-rdynamic
 
 TESTS = $(wildcard *_test.cc)
 SRCS = $(filter-out $(TESTS),$(wildcard *.cc))

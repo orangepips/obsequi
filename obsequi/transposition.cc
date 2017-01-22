@@ -1,6 +1,7 @@
 #include "transposition.h"
 
 #include <cstring>
+#include <stdlib.h>
 
 //########################################################
 // Constants used in conjuction with the transposition table
